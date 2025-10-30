@@ -20,77 +20,131 @@ import { Separator } from "@/components/ui/separator";
 import { TrendingUp, TrendingDown, Activity, AlertCircle } from "lucide-react";
 
 async function getDashboardData() {
-  const currentYear = 2025;
-  const currentMonth = 10; // October 2025
-
-  // Get current month sales summary
-  const salesSummary = await db
-    .select({
-      totalGross: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
-      totalVAT: sql<number>`COALESCE(SUM((CASE WHEN ${sales.amountType} = 'INCL' THEN ${sales.totalValue} - (${sales.totalValue} * 0.15 / 1.15) ELSE ${sales.totalValue} END) * 0.15), 0)`,
-      totalNet: sql<number>`COALESCE(SUM(CASE WHEN ${sales.amountType} = 'INCL' THEN ${sales.totalValue} - (${sales.totalValue} * 0.15 / 1.15) ELSE ${sales.totalValue} END), 0)`,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(sales)
-    .where(
-      and(
-        sql`EXTRACT(YEAR FROM ${sales.dt}) = ${currentYear}`,
-        sql`EXTRACT(MONTH FROM ${sales.dt}) = ${currentMonth}`
-      )
-    );
-
-  // Get VAT ledger for current period
-  const vatLedgerEntry = await db
-    .select()
-    .from(vatLedger)
-    .where(
-      and(
-        eq(vatLedger.periodYear, currentYear),
-        eq(vatLedger.periodMonth, currentMonth)
-      )
-    )
-    .limit(1);
-
-  // Get current closing balance with fallback
-  let currentClosingBalance = 0;
   try {
-    // Try old format first (most likely to exist)
-    const currentClosingBalanceResult = await db.execute(sql`
-      SELECT amount_bdt as balance
-      FROM closing_balance 
-      WHERE period_year = ${currentYear} AND period_month = ${currentMonth}
-      LIMIT 1
-    `);
+    const currentYear = 2025;
+    const currentMonth = 10; // October 2025
 
-    if (currentClosingBalanceResult.rows.length > 0) {
-      currentClosingBalance = parseFloat(
-        (currentClosingBalanceResult.rows[0] as any).balance || "0"
-      );
+    // Initialize default values
+    let salesSummary = {
+      totalGross: 0,
+      totalVAT: 0,
+      totalNet: 0,
+      count: 0,
+    };
+    let vatLedgerEntry = null;
+    let currentClosingBalance = 0;
+    let treasuryChallanSum = 0;
+
+    // Get current month sales summary with error handling
+    try {
+      const salesResult = await db
+        .select({
+          totalGross: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
+          totalVAT: sql<number>`COALESCE(SUM((CASE WHEN ${sales.amountType} = 'INCL' THEN ${sales.totalValue} - (${sales.totalValue} * 0.15 / 1.15) ELSE ${sales.totalValue} END) * 0.15), 0)`,
+          totalNet: sql<number>`COALESCE(SUM(CASE WHEN ${sales.amountType} = 'INCL' THEN ${sales.totalValue} - (${sales.totalValue} * 0.15 / 1.15) ELSE ${sales.totalValue} END), 0)`,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(sales)
+        .where(
+          and(
+            sql`EXTRACT(YEAR FROM ${sales.dt}) = ${currentYear}`,
+            sql`EXTRACT(MONTH FROM ${sales.dt}) = ${currentMonth}`
+          )
+        );
+      salesSummary = salesResult[0];
+    } catch (error) {
+      console.log("Sales table might not exist:", error);
     }
+
+    // Get VAT ledger for current period with error handling
+    try {
+      const vatResult = await db
+        .select()
+        .from(vatLedger)
+        .where(
+          and(
+            eq(vatLedger.periodYear, currentYear),
+            eq(vatLedger.periodMonth, currentMonth)
+          )
+        )
+        .limit(1);
+      vatLedgerEntry = vatResult[0] || null;
+    } catch (error) {
+      console.log("VAT ledger table might not exist:", error);
+    }
+
+    // Get current closing balance with fallback
+    try {
+      // Try new format first
+      const currentClosingBalanceResult = await db.execute(sql`
+        SELECT closing_balance as balance
+        FROM closing_balance 
+        WHERE period_year = ${currentYear} AND period_month = ${currentMonth}
+        LIMIT 1
+      `);
+
+      if (currentClosingBalanceResult.rows.length > 0) {
+        currentClosingBalance = parseFloat(
+          (currentClosingBalanceResult.rows[0] as any).balance || "0"
+        );
+      } else {
+        // Try to get the latest available balance
+        const latestBalance = await db.execute(sql`
+          SELECT closing_balance as balance
+          FROM closing_balance 
+          ORDER BY period_year DESC, period_month DESC
+          LIMIT 1
+        `);
+        if (latestBalance.rows.length > 0) {
+          currentClosingBalance = parseFloat(
+            (latestBalance.rows[0] as any).balance || "0"
+          );
+        }
+      }
+    } catch (error) {
+      console.log("Closing balance table might not exist:", error);
+      currentClosingBalance = 0;
+    }
+
+    // Get treasury challans for current month with error handling
+    try {
+      const treasuryResult = await db
+        .select({
+          total: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
+        })
+        .from(treasuryChallans)
+        .where(
+          and(
+            eq(treasuryChallans.periodYear, currentYear),
+            eq(treasuryChallans.periodMonth, currentMonth)
+          )
+        );
+      treasuryChallanSum = treasuryResult[0].total;
+    } catch (error) {
+      console.log("Treasury challans table might not exist:", error);
+    }
+
+    return {
+      salesSummary,
+      vatLedgerEntry,
+      closingBalance: currentClosingBalance,
+      treasuryChallanSum,
+    };
   } catch (error) {
-    console.log("Closing balance table might not exist:", error);
-    currentClosingBalance = 0;
+    console.error("Error fetching dashboard data:", error);
+    // Return safe defaults
+    return {
+      salesSummary: {
+        totalGross: 0,
+        totalVAT: 0,
+        totalNet: 0,
+        count: 0,
+      },
+      vatLedgerEntry: null,
+      closingBalance: 0,
+      treasuryChallanSum: 0,
+    };
   }
-
-  // Get treasury challans for current month
-  const treasuryChallanSum = await db
-    .select({
-      total: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
-    })
-    .from(treasuryChallans)
-    .where(
-      and(
-        eq(treasuryChallans.periodYear, currentYear),
-        eq(treasuryChallans.periodMonth, currentMonth)
-      )
-    );
-
-  return {
-    salesSummary: salesSummary[0],
-    vatLedgerEntry: vatLedgerEntry[0] || null,
-    closingBalance: currentClosingBalance,
-    treasuryChallanSum: treasuryChallanSum[0].total,
-  };
 }
 
 export default async function Dashboard() {
