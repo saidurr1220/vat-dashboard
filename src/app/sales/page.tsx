@@ -1,6 +1,6 @@
 import { db } from "@/db/client";
-import { sales, salesLines, products } from "@/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { sales, salesLines, products, customers } from "@/db/schema";
+import { desc, eq, sql, gte } from "drizzle-orm";
 import Link from "next/link";
 
 // Force dynamic rendering to avoid build-time database queries
@@ -23,24 +23,24 @@ import {
 
 async function getSales() {
   try {
-    const result = await db.execute(sql`
-      SELECT 
-        s.id,
-        s.invoice_no as "invoiceNo",
-        s.dt as date,
-        s.customer,
-        s.amount_type as "amountType",
-        s.total_value as "totalValue",
-        s.notes,
-        c.name as "customerName"
-      FROM sales s
-      LEFT JOIN customers c ON s.customer_id = c.id
-      ORDER BY s.dt DESC, s.id DESC
-      LIMIT 50
-    `);
+    const result = await db
+      .select({
+        id: sales.id,
+        invoiceNo: sales.invoiceNo,
+        date: sales.dt,
+        customer: sales.customer,
+        amountType: sales.amountType,
+        totalValue: sales.totalValue,
+        notes: sales.notes,
+        customerName: customers.name,
+      })
+      .from(sales)
+      .leftJoin(customers, eq(sales.customerId, customers.id))
+      .orderBy(desc(sales.dt), desc(sales.id))
+      .limit(50);
 
     // Use stored total value as final amount - don't recalculate VAT
-    return result.rows.map((sale: any) => {
+    return result.map((sale) => {
       const totalValue = Number(sale.totalValue);
       const grandTotal = totalValue; // This is already the final amount including VAT
 
@@ -74,37 +74,48 @@ async function getSales() {
 
 async function getSalesStats() {
   try {
-    const result = await db.execute(sql`
-      SELECT 
-        COUNT(*) as total_sales,
-        COALESCE(SUM(
-          CASE 
-            WHEN amount_type = 'INCL' THEN total_value
-            ELSE total_value * 1.15
-          END
-        ), 0) as total_gross,
-        COALESCE(SUM(
-          (CASE 
-            WHEN amount_type = 'INCL' THEN total_value - (total_value * 0.15 / 1.15)
-            ELSE total_value
-          END) * 0.15
-        ), 0) as total_vat,
-        COALESCE(SUM(
-          CASE 
-            WHEN amount_type = 'INCL' THEN total_value - (total_value * 0.15 / 1.15)
-            ELSE total_value
-          END
-        ), 0) as total_net
-      FROM sales 
-      WHERE dt >= date_trunc('month', CURRENT_DATE)
-    `);
+    // Get the first day of current month
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const stats = result.rows[0] as any;
+    const result = await db
+      .select({
+        id: sales.id,
+        totalValue: sales.totalValue,
+        amountType: sales.amountType,
+      })
+      .from(sales)
+      .where(gte(sales.dt, firstDayOfMonth));
+
+    let totalSales = 0;
+    let totalGross = 0;
+    let totalVAT = 0;
+    let totalNet = 0;
+
+    result.forEach((sale) => {
+      totalSales++;
+      const totalValue = Number(sale.totalValue);
+
+      if (sale.amountType === "INCL") {
+        // VAT Inclusive
+        totalGross += totalValue;
+        const vatAmount = (totalValue * 15) / 115;
+        totalVAT += vatAmount;
+        totalNet += totalValue - vatAmount;
+      } else {
+        // VAT Exclusive - total_value is the net amount
+        totalNet += totalValue;
+        const vatAmount = totalValue * 0.15;
+        totalVAT += vatAmount;
+        totalGross += totalValue + vatAmount;
+      }
+    });
+
     return {
-      totalSales: parseInt(stats?.total_sales || "0"),
-      totalGross: parseFloat(stats?.total_gross || "0"),
-      totalVAT: parseFloat(stats?.total_vat || "0"),
-      totalNet: parseFloat(stats?.total_net || "0"),
+      totalSales,
+      totalGross: Math.round(totalGross * 100) / 100,
+      totalVAT: Math.round(totalVAT * 100) / 100,
+      totalNet: Math.round(totalNet * 100) / 100,
     };
   } catch (error) {
     console.error("Error fetching sales stats:", error);
