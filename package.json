@@ -26,6 +26,10 @@
         "deploy:check": "tsx scripts/deploy.ts",
         "deploy:setup": "tsx scripts/deploy-setup.ts",
         "deploy:vercel": "vercel --prod",
+        "export:data": "tsx scripts/export-data.ts",
+        "import:data": "tsx scripts/import-data.ts",
+        "backup:db": "tsx scripts/backup-db.ts",
+        "setup:production": "tsx scripts/setup-production.ts",
         "postbuild": "echo 'Build completed successfully'"
     },
     "dependencies": {
