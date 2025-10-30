@@ -8,82 +8,95 @@ import {
 import { sql, eq, and, gte, lte } from "drizzle-orm";
 import Link from "next/link";
 
-async function getVATReports() {
-  const currentYear = 2025;
-  const currentMonth = 10;
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 
-  // Get monthly VAT summary for current year
-  const monthlyVAT = await db
-    .select({
-      month: sql<number>`EXTRACT(MONTH FROM ${sales.dt})`,
-      grossSales: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
-      vatAmount: sql<number>`COALESCE(SUM(
+async function getVATReports() {
+  try {
+    const currentYear = 2025;
+    const currentMonth = 10;
+
+    // Get monthly VAT summary for current year
+    const monthlyVAT = await db
+      .select({
+        month: sql<number>`EXTRACT(MONTH FROM ${sales.dt})`,
+        grossSales: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
+        vatAmount: sql<number>`COALESCE(SUM(
         (CASE 
           WHEN ${sales.amountType} = 'INCL' 
           THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric * 0.15 / 1.15)
           ELSE ${sales.totalValue}::numeric
         END) * 0.15
       ), 0)`,
-      netSales: sql<number>`COALESCE(SUM(
+        netSales: sql<number>`COALESCE(SUM(
         CASE 
           WHEN ${sales.amountType} = 'INCL' 
           THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric * 0.15 / 1.15)
           ELSE ${sales.totalValue}::numeric
         END
       ), 0)`,
-      salesCount: sql<number>`COUNT(*)`,
-    })
-    .from(sales)
-    .where(sql`EXTRACT(YEAR FROM ${sales.dt}) = ${currentYear}`)
-    .groupBy(sql`EXTRACT(MONTH FROM ${sales.dt})`)
-    .orderBy(sql`EXTRACT(MONTH FROM ${sales.dt})`);
+        salesCount: sql<number>`COUNT(*)`,
+      })
+      .from(sales)
+      .where(sql`EXTRACT(YEAR FROM ${sales.dt}) = ${currentYear}`)
+      .groupBy(sql`EXTRACT(MONTH FROM ${sales.dt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${sales.dt})`);
 
-  // Get VAT ledger entries
-  const vatLedgerEntries = await db
-    .select()
-    .from(vatLedger)
-    .where(eq(vatLedger.periodYear, currentYear))
-    .orderBy(vatLedger.periodMonth);
+    // Get VAT ledger entries
+    const vatLedgerEntries = await db
+      .select()
+      .from(vatLedger)
+      .where(eq(vatLedger.periodYear, currentYear))
+      .orderBy(vatLedger.periodMonth);
 
-  // Get treasury challans
-  const treasuryData = await db
-    .select({
-      periodMonth: treasuryChallans.periodMonth,
-      totalAmount: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
-      challanCount: sql<number>`COUNT(*)`,
-    })
-    .from(treasuryChallans)
-    .where(eq(treasuryChallans.periodYear, currentYear))
-    .groupBy(treasuryChallans.periodMonth)
-    .orderBy(treasuryChallans.periodMonth);
+    // Get treasury challans
+    const treasuryData = await db
+      .select({
+        periodMonth: treasuryChallans.periodMonth,
+        totalAmount: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
+        challanCount: sql<number>`COUNT(*)`,
+      })
+      .from(treasuryChallans)
+      .where(eq(treasuryChallans.periodYear, currentYear))
+      .groupBy(treasuryChallans.periodMonth)
+      .orderBy(treasuryChallans.periodMonth);
 
-  // Get closing balance with fallback
-  let closingBalanceData = 0;
-  try {
-    // Try old format first (most likely to exist)
-    const closingBalanceResult = await db.execute(sql`
+    // Get closing balance with fallback
+    let closingBalanceData = 0;
+    try {
+      // Try old format first (most likely to exist)
+      const closingBalanceResult = await db.execute(sql`
       SELECT amount_bdt as balance
       FROM closing_balance 
       WHERE period_year = ${currentYear} AND period_month = ${currentMonth}
       LIMIT 1
     `);
 
-    if (closingBalanceResult.rows.length > 0) {
-      closingBalanceData = parseFloat(
-        (closingBalanceResult.rows[0] as any).balance || "0"
-      );
+      if (closingBalanceResult.rows.length > 0) {
+        closingBalanceData = parseFloat(
+          (closingBalanceResult.rows[0] as any).balance || "0"
+        );
+      }
+    } catch (error) {
+      console.log("Closing balance table might not exist:", error);
+      closingBalanceData = 0;
     }
-  } catch (error) {
-    console.log("Closing balance table might not exist:", error);
-    closingBalanceData = 0;
-  }
 
-  return {
-    monthlyVAT,
-    vatLedgerEntries,
-    treasuryData,
-    closingBalance: closingBalanceData,
-  };
+    return {
+      monthlyVAT,
+      vatLedgerEntries,
+      treasuryData,
+      closingBalance: closingBalanceData,
+    };
+  } catch (error) {
+    console.error("Error fetching VAT reports:", error);
+    return {
+      monthlyVAT: [],
+      vatLedgerEntries: [],
+      treasuryData: [],
+      closingBalance: 0,
+    };
+  }
 }
 
 const monthNames = [

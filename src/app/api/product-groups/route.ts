@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        let groupId: number;
+        let groupId: number = 0;
 
         await db.transaction(async (tx) => {
             // Create the group

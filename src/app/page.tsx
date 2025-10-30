@@ -6,6 +6,9 @@ import {
   treasuryChallans,
 } from "@/db/schema";
 import { sql, eq, and } from "drizzle-orm";
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 import VATComputeButton from "@/components/VATComputeButton";
 import ModernDashboardCards from "@/components/ModernDashboardCards";
 import ModernStockSummary from "@/components/ModernStockSummary";

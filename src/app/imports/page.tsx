@@ -3,29 +3,37 @@ import { importsBoe } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 
-async function getImports() {
-  const importsData = await db
-    .select({
-      id: importsBoe.id,
-      boeNo: importsBoe.boeNo,
-      boeDate: importsBoe.boeDate,
-      officeCode: importsBoe.officeCode,
-      itemNo: importsBoe.itemNo,
-      hsCode: importsBoe.hsCode,
-      description: importsBoe.description,
-      assessableValue: importsBoe.assessableValue,
-      baseVat: importsBoe.baseVat,
-      sd: importsBoe.sd,
-      vat: importsBoe.vat,
-      at: importsBoe.at,
-      qty: importsBoe.qty,
-      unit: importsBoe.unit,
-    })
-    .from(importsBoe)
-    .orderBy(desc(importsBoe.boeDate))
-    .limit(100);
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 
-  return importsData;
+async function getImports() {
+  try {
+    const importsData = await db
+      .select({
+        id: importsBoe.id,
+        boeNo: importsBoe.boeNo,
+        boeDate: importsBoe.boeDate,
+        officeCode: importsBoe.officeCode,
+        itemNo: importsBoe.itemNo,
+        hsCode: importsBoe.hsCode,
+        description: importsBoe.description,
+        assessableValue: importsBoe.assessableValue,
+        baseVat: importsBoe.baseVat,
+        sd: importsBoe.sd,
+        vat: importsBoe.vat,
+        at: importsBoe.at,
+        qty: importsBoe.qty,
+        unit: importsBoe.unit,
+      })
+      .from(importsBoe)
+      .orderBy(desc(importsBoe.boeDate))
+      .limit(100);
+
+    return importsData;
+  } catch (error) {
+    console.error("Error fetching imports:", error);
+    return [];
+  }
 }
 
 export default async function ImportsPage() {

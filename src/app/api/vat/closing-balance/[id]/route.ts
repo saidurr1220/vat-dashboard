@@ -10,12 +10,12 @@ export async function PUT(
     try {
         const { id: paramId } = await params;
         const id = parseInt(paramId);
-        const { amountBdt } = await request.json();
+        const { closingBalance: closingBalanceAmount } = await request.json();
 
         const updatedBalance = await db
             .update(closingBalance)
             .set({
-                amountBdt: amountBdt.toString(),
+                closingBalance: closingBalanceAmount.toString(),
             })
             .where(eq(closingBalance.id, id))
             .returning();

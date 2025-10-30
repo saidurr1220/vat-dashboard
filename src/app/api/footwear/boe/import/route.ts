@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
                 imported++;
             } catch (error) {
                 console.error(`Error processing row ${rowNum}:`, error);
-                errors.push(`Row ${rowNum}: ${error.message || 'Processing error'}`);
+                errors.push(`Row ${rowNum}: ${error instanceof Error ? error.message : 'Processing error'}`);
             }
         }
 

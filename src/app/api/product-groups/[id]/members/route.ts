@@ -150,7 +150,7 @@ export async function DELETE(
     } catch (error) {
         console.error('Error removing group member:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to remove product from group' },
+            { error: error instanceof Error ? error.message : 'Failed to remove product from group' },
             { status: 500 }
         );
     }
@@ -210,7 +210,7 @@ export async function PUT(
     } catch (error) {
         console.error('Error setting primary member:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to set primary member' },
+            { error: error instanceof Error ? error.message : 'Failed to set primary member' },
             { status: 500 }
         );
     }

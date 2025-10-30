@@ -2,6 +2,9 @@ import { db } from "@/db/client";
 import { sales, salesLines, products } from "@/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import Link from "next/link";
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,12 +99,12 @@ async function getSalesStats() {
       WHERE dt >= date_trunc('month', CURRENT_DATE)
     `);
 
-    const stats = result.rows[0];
+    const stats = result.rows[0] as any;
     return {
-      totalSales: parseInt(stats.total_sales || 0),
-      totalGross: parseFloat(stats.total_gross || 0),
-      totalVAT: parseFloat(stats.total_vat || 0),
-      totalNet: parseFloat(stats.total_net || 0),
+      totalSales: parseInt(stats?.total_sales || "0"),
+      totalGross: parseFloat(stats?.total_gross || "0"),
+      totalVAT: parseFloat(stats?.total_vat || "0"),
+      totalNet: parseFloat(stats?.total_net || "0"),
     };
   } catch (error) {
     console.error("Error fetching sales stats:", error);

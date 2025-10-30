@@ -2,14 +2,22 @@ import { db } from "@/db/client";
 import { treasuryChallans } from "@/db/schema";
 import { desc } from "drizzle-orm";
 
-async function getTreasuryChallans() {
-  const challans = await db
-    .select()
-    .from(treasuryChallans)
-    .orderBy(desc(treasuryChallans.date))
-    .limit(50);
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 
-  return challans;
+async function getTreasuryChallans() {
+  try {
+    const challans = await db
+      .select()
+      .from(treasuryChallans)
+      .orderBy(desc(treasuryChallans.date))
+      .limit(50);
+
+    return challans;
+  } catch (error) {
+    console.error("Error fetching treasury challans:", error);
+    return [];
+  }
 }
 
 export default async function TreasuryPage() {

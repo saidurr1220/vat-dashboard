@@ -83,11 +83,11 @@ export async function POST(request: NextRequest) {
                     .limit(1);
 
                 if (currentBalance.length > 0) {
-                    const newAmount = parseFloat(currentBalance[0].amountBdt) - usedFromClosingBalance;
+                    const newAmount = parseFloat(currentBalance[0].closingBalance) - usedFromClosingBalance;
                     await tx
                         .update(closingBalance)
                         .set({
-                            amountBdt: Math.max(0, newAmount).toString()
+                            closingBalance: Math.max(0, newAmount).toString()
                         })
                         .where(
                             and(
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
                     await tx.insert(closingBalance).values({
                         periodYear: year,
                         periodMonth: month,
-                        amountBdt: "0"
+                        closingBalance: "0"
                     });
                 }
             }

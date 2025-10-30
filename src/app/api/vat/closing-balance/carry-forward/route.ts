@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
                 throw new Error(`No closing balance found for ${fromYear}-${fromMonth}`);
             }
 
-            const carryForwardAmount = parseFloat(previousBalance[0].amountBdt);
+            const carryForwardAmount = parseFloat(previousBalance[0].closingBalance);
 
             // Check if target month already has a balance
             const existingBalance = await tx
@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
 
             if (existingBalance.length > 0) {
                 // Update existing balance by adding carry forward amount
-                const currentAmount = parseFloat(existingBalance[0].amountBdt);
+                const currentAmount = parseFloat(existingBalance[0].closingBalance);
                 const newAmount = currentAmount + carryForwardAmount;
 
                 await tx
                     .update(closingBalance)
                     .set({
-                        amountBdt: newAmount.toString()
+                        closingBalance: newAmount.toString()
                     })
                     .where(
                         and(
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
                 await tx.insert(closingBalance).values({
                     periodYear: toYear,
                     periodMonth: toMonth,
-                    amountBdt: carryForwardAmount.toString()
+                    closingBalance: carryForwardAmount.toString()
                 });
             }
         });

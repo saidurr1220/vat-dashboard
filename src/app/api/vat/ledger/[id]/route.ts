@@ -74,12 +74,12 @@ export async function DELETE(
                 .limit(1);
 
             if (currentBalance) {
-                const currentAmount = parseFloat(currentBalance.amountBdt);
+                const currentAmount = parseFloat(currentBalance.closingBalance);
                 const newAmount = currentAmount + usedFromClosingBalance;
 
                 await db
                     .update(closingBalance)
-                    .set({ amountBdt: newAmount.toString() })
+                    .set({ closingBalance: newAmount.toString() })
                     .where(eq(closingBalance.id, currentBalance.id));
             }
         }

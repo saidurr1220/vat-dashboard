@@ -179,7 +179,7 @@ export async function DELETE(
     } catch (error) {
         console.error('Error deleting product group:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to delete product group' },
+            { error: error instanceof Error ? error.message : 'Failed to delete product group' },
             { status: 500 }
         );
     }

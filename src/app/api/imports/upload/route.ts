@@ -101,19 +101,19 @@ export async function POST(request: NextRequest) {
                     itemNo: record.item_no,
                     hsCode: record.hs_code || null,
                     description: record.description || null,
-                    assessableValue: record.assessable_value ? parseFloat(record.assessable_value) : null,
-                    baseVat: record.base_vat ? parseFloat(record.base_vat) : null,
-                    sd: record.sd ? parseFloat(record.sd) : null,
-                    vat: record.vat ? parseFloat(record.vat) : null,
-                    at: record.at ? parseFloat(record.at) : null,
-                    qty: record.qty ? parseFloat(record.qty) : null,
+                    assessableValue: record.assessable_value ? record.assessable_value : null,
+                    baseVat: record.base_vat ? record.base_vat : null,
+                    sd: record.sd ? record.sd : null,
+                    vat: record.vat ? record.vat : null,
+                    at: record.at ? record.at : null,
+                    qty: record.qty ? record.qty : null,
                     unit: record.unit || null,
                 });
 
                 imported++;
             } catch (error) {
                 console.error(`Error processing row ${rowNum}:`, error);
-                errors.push(`Row ${rowNum}: ${error.message || 'Processing error'}`);
+                errors.push(`Row ${rowNum}: ${error instanceof Error ? error.message : 'Processing error'}`);
             }
         }
 

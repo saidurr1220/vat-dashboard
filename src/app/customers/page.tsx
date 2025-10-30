@@ -2,6 +2,9 @@ import { db } from "@/db/client";
 import { customers, sales } from "@/db/schema";
 import { desc, sql, eq } from "drizzle-orm";
 import Link from "next/link";
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +48,12 @@ async function getCustomerStats() {
       FROM customers c
     `);
 
-    const stats = result.rows[0];
+    const stats = result.rows[0] as any;
     return {
-      totalCustomers: parseInt(stats.total_customers || 0),
-      customersWithBin: parseInt(stats.customers_with_bin || 0),
-      customersWithPhone: parseInt(stats.customers_with_phone || 0),
-      newThisMonth: parseInt(stats.new_this_month || 0),
+      totalCustomers: parseInt(stats?.total_customers || "0"),
+      customersWithBin: parseInt(stats?.customers_with_bin || "0"),
+      customersWithPhone: parseInt(stats?.customers_with_phone || "0"),
+      newThisMonth: parseInt(stats?.new_this_month || "0"),
     };
   } catch (error) {
     console.error("Error fetching customer stats:", error);

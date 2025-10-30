@@ -2,6 +2,9 @@ import { db } from "@/db/client";
 import { products, sales, salesLines, stockLedger } from "@/db/schema";
 import { sql, eq } from "drizzle-orm";
 import Link from "next/link";
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = "force-dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,12 +94,12 @@ async function getProductStats() {
       FROM products p
     `);
 
-    const stats = result.rows[0];
+    const stats = result.rows[0] as any;
     return {
-      totalProducts: parseInt(stats.total_products || 0),
-      footwearCount: parseInt(stats.footwear_count || 0),
-      bioshieldCount: parseInt(stats.bioshield_count || 0),
-      fanCount: parseInt(stats.fan_count || 0),
+      totalProducts: parseInt(stats?.total_products || "0"),
+      footwearCount: parseInt(stats?.footwear_count || "0"),
+      bioshieldCount: parseInt(stats?.bioshield_count || "0"),
+      fanCount: parseInt(stats?.fan_count || "0"),
       instrumentCount: parseInt(stats.instrument_count || 0),
       totalStockValue: parseFloat(stats.total_stock_value || 0),
     };
