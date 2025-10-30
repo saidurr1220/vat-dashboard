@@ -28,6 +28,8 @@
         "deploy:vercel": "vercel --prod",
         "export:data": "tsx scripts/export-data.ts",
         "import:data": "tsx scripts/import-data.ts",
+        "export:local": "tsx scripts/export-local-data.ts",
+        "import:production": "tsx scripts/import-to-production.ts",
         "backup:db": "tsx scripts/backup-db.ts",
         "setup:production": "tsx scripts/setup-production.ts",
         "postbuild": "echo 'Build completed successfully'"
