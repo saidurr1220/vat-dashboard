@@ -1,0 +1,5 @@
+# Replace YOUR_NEW_PASSWORD with the password from Neon dashboard
+DATABASE_URL="postgresql://neondb_owner:YOUR_NEW_PASSWORD@ep-young-surf-aeudo0xq-pooler.c-2.us-east-2.aws.neon.tech/mydb?sslmode=require"
+
+# Alternative: You can also try the direct connection (without pooler)
+# DATABASE_URL="postgresql://neondb_owner:YOUR_NEW_PASSWORD@ep-young-surf-aeudo0xq.c-2.us-east-2.aws.neon.tech/mydb?sslmode=require"

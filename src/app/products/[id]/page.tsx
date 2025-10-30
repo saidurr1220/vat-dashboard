@@ -2,6 +2,7 @@ import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BoEDataDisplay from "@/components/BoEDataDisplay";
 
 async function getProductDetails(id: string) {
   try {
@@ -356,6 +357,40 @@ export default async function ProductDetailPage({
             </div>
           </div>
         </div>
+
+        {/* BoE Data Section - Only for Footwear */}
+        {product.category === "Footwear" && (
+          <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-red-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  BoE Import History
+                </h2>
+              </div>
+            </div>
+            <div className="p-8">
+              <BoEDataDisplay
+                productId={product.id}
+                productName={product.name}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Recent Stock Movements */}
         <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">

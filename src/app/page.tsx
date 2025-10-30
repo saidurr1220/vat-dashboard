@@ -10,6 +10,10 @@ import {
   Calendar,
   CheckCircle,
   ArrowRight,
+  Package,
+  Archive,
+  BarChart3,
+  Users,
 } from "lucide-react";
 
 // Force dynamic rendering to avoid build-time database queries
@@ -35,6 +39,20 @@ function getDashboardData() {
           "Calculate monthly VAT obligations and treasury requirements",
         icon: Calculator,
         href: "/vat/monthly",
+        status: "ready",
+      },
+      {
+        title: "Footwear System",
+        description: "Advanced footwear inventory with BoE import tracking",
+        icon: Archive,
+        href: "/footwear",
+        status: "ready",
+      },
+      {
+        title: "Products & Stock",
+        description: "Manage inventory, pricing, and product information",
+        icon: Package,
+        href: "/products",
         status: "ready",
       },
       {
@@ -119,9 +137,20 @@ export default function Dashboard() {
         </Card>
 
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.features.map((feature, index) => {
             const Icon = feature.icon;
+            const getIconColor = (title: string) => {
+              if (title.includes("VAT")) return "from-blue-500 to-indigo-500";
+              if (title.includes("Footwear"))
+                return "from-orange-500 to-red-500";
+              if (title.includes("Products"))
+                return "from-green-500 to-emerald-500";
+              if (title.includes("Treasury"))
+                return "from-purple-500 to-pink-500";
+              return "from-gray-500 to-slate-500";
+            };
+
             return (
               <Card
                 key={index}
@@ -129,7 +158,11 @@ export default function Dashboard() {
               >
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <div
+                      className={`w-10 h-10 bg-gradient-to-br ${getIconColor(
+                        feature.title
+                      )} rounded-xl flex items-center justify-center`}
+                    >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -155,39 +188,74 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Stats */}
-        <Card className="mt-8 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              System Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                System Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">Database</h3>
+                  <p className="text-sm text-gray-600">Connected & Ready</p>
                 </div>
-                <h3 className="font-semibold text-gray-900">Database</h3>
-                <p className="text-sm text-gray-600">Connected & Ready</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Banknote className="w-6 h-6 text-blue-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Banknote className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">VAT System</h3>
+                  <p className="text-sm text-gray-600">Fully Operational</p>
                 </div>
-                <h3 className="font-semibold text-gray-900">VAT System</h3>
-                <p className="text-sm text-gray-600">Fully Operational</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Calendar className="w-6 h-6 text-purple-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Calendar className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">
+                    Current Period
+                  </h3>
+                  <p className="text-sm text-gray-600">{data.currentPeriod}</p>
                 </div>
-                <h3 className="font-semibold text-gray-900">Current Period</h3>
-                <p className="text-sm text-gray-600">{data.currentPeriod}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="w-5 h-5 text-orange-600" />
+                BoE Import Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
+                    Ready
+                  </div>
+                  <div className="text-sm text-orange-700">Import System</div>
+                </div>
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">Active</div>
+                  <div className="text-sm text-blue-700">FIFO Tracking</div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Link href="/footwear">
+                  <Button variant="outline" className="w-full gap-2">
+                    <Archive className="w-4 h-4" />
+                    View Footwear System
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

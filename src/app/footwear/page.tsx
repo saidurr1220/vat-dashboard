@@ -682,16 +682,124 @@ export default function FootwearManagementPage() {
                       htmlFor="file-upload"
                       className="text-sm font-medium"
                     >
-                      Select Excel File
+                      Select BoE JSON File
                     </Label>
                     <Input
                       id="file-upload"
                       type="file"
-                      accept=".xlsx,.xls"
+                      accept=".json,.xlsx,.xls"
                       onChange={handleFileUpload}
                       disabled={importing}
                       className="mt-2"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supports JSON files with BoE import data structure
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-blue-800 mb-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="font-medium">Quick Import</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Use the footwear_boe_import.json file from your project
+                      root for testing
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setImporting(true);
+                            const response = await fetch("/api/seed/boe", {
+                              method: "POST",
+                            });
+
+                            const result = await response.json();
+                            setImportResult(result);
+
+                            if (result.success) {
+                              await loadFootwearData();
+                            }
+                          } catch (error) {
+                            console.error("Seed import error:", error);
+                            setImportResult({
+                              success: false,
+                              message: "Failed to seed BoE data",
+                            });
+                          } finally {
+                            setImporting(false);
+                          }
+                        }}
+                        disabled={importing}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {importing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Download className="h-3 w-3" />
+                        )}
+                        Seed Database
+                      </Button>
+
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setImporting(true);
+                            const response = await fetch(
+                              "/footwear_boe_import.json"
+                            );
+                            const data = await response.json();
+
+                            const formData = new FormData();
+                            const blob = new Blob([JSON.stringify(data)], {
+                              type: "application/json",
+                            });
+                            formData.append(
+                              "file",
+                              blob,
+                              "footwear_boe_import.json"
+                            );
+
+                            const importResponse = await fetch(
+                              "/api/footwear/boe/import",
+                              {
+                                method: "POST",
+                                body: formData,
+                              }
+                            );
+
+                            const result = await importResponse.json();
+                            setImportResult(result);
+
+                            if (result.success) {
+                              await loadFootwearData();
+                            }
+                          } catch (error) {
+                            console.error("Quick import error:", error);
+                            setImportResult({
+                              success: false,
+                              message: "Failed to quick import sample data",
+                            });
+                          } finally {
+                            setImporting(false);
+                          }
+                        }}
+                        disabled={importing}
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {importing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <FileText className="h-3 w-3" />
+                        )}
+                        Import via API
+                      </Button>
+                    </div>
                   </div>
 
                   {importing && (

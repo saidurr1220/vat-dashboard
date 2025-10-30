@@ -9,16 +9,29 @@ const getDatabaseUrl = () => {
         'postgresql://postgres:2155@127.0.0.1:5432/mydb';
 };
 
-// Neon-optimized connection pool configuration
+// Enhanced Neon-optimized connection pool configuration
 const pool = new Pool({
     connectionString: getDatabaseUrl(),
-    // Neon-specific settings
-    max: 10, // Neon works well with smaller pools
-    idleTimeoutMillis: 20000,
-    connectionTimeoutMillis: 10000,
+    // Neon-specific settings optimized for serverless
+    max: 5, // Smaller pool for better connection management
+    min: 0, // Allow pool to scale to zero
+    idleTimeoutMillis: 10000, // Shorter idle timeout
+    connectionTimeoutMillis: 15000, // Longer connection timeout
     // SSL is required for Neon
     ssl: getDatabaseUrl().includes('neon.tech') ? { rejectUnauthorized: false } :
         process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
+// Handle pool errors
+pool.on('error', (err) => {
+    console.error('Database pool error:', err);
+});
+
+pool.on('connect', () => {
+    console.log('Database connection established');
+});
+
 export const db = drizzle(pool, { schema });
+
+// Export pool for direct access if needed
+export { pool };

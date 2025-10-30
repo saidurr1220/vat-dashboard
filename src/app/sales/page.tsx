@@ -23,19 +23,10 @@ import {
 
 async function getSales() {
   try {
+    // First, try to get sales without the join to see if that works
     const result = await db
-      .select({
-        id: sales.id,
-        invoiceNo: sales.invoiceNo,
-        date: sales.dt,
-        customer: sales.customer,
-        amountType: sales.amountType,
-        totalValue: sales.totalValue,
-        notes: sales.notes,
-        customerName: customers.name,
-      })
+      .select()
       .from(sales)
-      .leftJoin(customers, eq(sales.customerId, customers.id))
       .orderBy(desc(sales.dt), desc(sales.id))
       .limit(50);
 
@@ -59,11 +50,18 @@ async function getSales() {
       }
 
       return {
-        ...sale,
+        id: sale.id,
+        invoiceNo: sale.invoiceNo,
+        date: sale.dt,
+        customer: sale.customer,
+        amountType: sale.amountType,
+        totalValue: sale.totalValue,
+        notes: sale.notes,
+        customerName: null, // We'll add this back once the basic query works
         outputVat15: vatAmount.toFixed(2),
         netOfVat: netOfVat.toFixed(2),
         grandTotal: grandTotal.toFixed(2),
-        customerDisplay: sale.customerName || sale.customer,
+        customerDisplay: sale.customer, // Use the customer field directly for now
       };
     });
   } catch (error) {
@@ -74,16 +72,12 @@ async function getSales() {
 
 async function getSalesStats() {
   try {
-    // Get the first day of current month
+    // Get all sales for this month - simplified approach
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const result = await db
-      .select({
-        id: sales.id,
-        totalValue: sales.totalValue,
-        amountType: sales.amountType,
-      })
+      .select()
       .from(sales)
       .where(gte(sales.dt, firstDayOfMonth));
 

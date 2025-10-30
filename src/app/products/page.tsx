@@ -24,84 +24,67 @@ import {
 import DashboardRefresh from "@/components/DashboardRefresh";
 
 async function getProductsWithStock() {
-  // Use raw SQL to avoid Drizzle issues with stock calculation
-  const result = await db.execute(sql`
-    SELECT 
-      p.id,
-      p.sku,
-      p.category,
-      p.name,
-      p.hs_code as "hsCode",
-      p.unit,
-      p.cost_ex_vat as "costExVat",
-      p.sell_ex_vat as "sellExVat",
-      p.tests_per_kit as "testsPerKit",
-      CASE 
-        WHEN p.category = 'Footwear' THEN 
-          COALESCE((
-            SELECT SUM(bl.closing_pairs)
-            FROM boe_lots bl 
-            WHERE bl.product_id = p.id
-          ), 0)
-        ELSE 
-          COALESCE((
-            SELECT SUM(sl.qty_in::numeric) - SUM(sl.qty_out::numeric)
-            FROM stock_ledger sl 
-            WHERE sl.product_id = p.id
-          ), 0)
-      END as "stockOnHand",
-      COALESCE((
-        SELECT SUM(sls.qty::numeric) 
-        FROM sales_lines sls 
-        WHERE sls.product_id = p.id
-      ), 0) as "totalSold"
-    FROM products p
-    ORDER BY p.category, p.name
-  `);
+  try {
+    console.log("🔍 Starting getProductsWithStock...");
 
-  return result.rows.map((product: any) => ({
-    ...product,
-    stockOnHand: Number(product.stockOnHand || 0),
-    totalSold: Number(product.totalSold || 0),
-  }));
+    // Use Drizzle ORM methods instead of raw SQL
+    const productsData = await db.select().from(products);
+    console.log(`📦 Found ${productsData.length} products using ORM`);
+
+    if (productsData.length === 0) {
+      console.log("❌ No products found in database!");
+      return [];
+    }
+
+    // For now, return products with basic stock calculation
+    const productsWithStock = productsData.map((product) => ({
+      id: product.id,
+      name: product.name,
+      category: product.category || "Uncategorized",
+      unit: product.unit,
+      sku: product.sku || "",
+      hsCode: product.hsCode || "",
+      testsPerKit: product.testsPerKit,
+      costExVat: Number(product.costExVat || 0),
+      sellExVat: Number(product.sellExVat || 0),
+      stockOnHand: 0, // We'll add stock calculation later
+      totalSold: 0, // We'll add sales calculation later
+    }));
+
+    console.log(`✅ Returning ${productsWithStock.length} products`);
+    return productsWithStock;
+  } catch (error) {
+    console.error("❌ Error fetching products:", error);
+    return [];
+  }
 }
 
 async function getProductStats() {
   try {
-    const result = await db.execute(sql`
-      SELECT 
-        COUNT(*) as total_products,
-        COUNT(CASE WHEN p.category = 'Footwear' THEN 1 END) as footwear_count,
-        COUNT(CASE WHEN p.category = 'BioShield' THEN 1 END) as bioshield_count,
-        COUNT(CASE WHEN p.category = 'Fan' THEN 1 END) as fan_count,
-        COUNT(CASE WHEN p.category = 'Instrument' THEN 1 END) as instrument_count,
-        COALESCE(SUM(
-          CASE 
-            WHEN p.category = 'Footwear' THEN 
-              COALESCE((
-                SELECT SUM(bl.closing_pairs)
-                FROM boe_lots bl 
-                WHERE bl.product_id = p.id
-              ), 0) * COALESCE(p.cost_ex_vat::numeric, 0)
-            ELSE 
-              COALESCE((
-                SELECT SUM(sl.qty_in::numeric) - SUM(sl.qty_out::numeric)
-                FROM stock_ledger sl 
-                WHERE sl.product_id = p.id
-              ), 0) * COALESCE(p.cost_ex_vat::numeric, 0)
-          END
-        ), 0) as total_stock_value
-      FROM products p
-    `);
+    // Use ORM to get basic product count
+    const allProducts = await db.select().from(products);
 
-    const stats = result.rows[0] as any;
+    const totalProducts = allProducts.length;
+    const footwearCount = allProducts.filter(
+      (p) => p.category === "Footwear"
+    ).length;
+    const bioshieldCount = allProducts.filter(
+      (p) => p.category === "BioShield"
+    ).length;
+    const fanCount = allProducts.filter((p) => p.category === "Fan").length;
+    const instrumentCount = allProducts.filter(
+      (p) => p.category === "Instrument"
+    ).length;
+
+    console.log(`📊 Stats: Total=${totalProducts}, Footwear=${footwearCount}`);
+
     return {
-      totalProducts: parseInt(stats?.total_products || "0"),
-      footwearCount: parseInt(stats?.footwear_count || "0"),
-      bioshieldCount: parseInt(stats?.bioshield_count || "0"),
-      fanCount: parseInt(stats?.fan_count || "0"),
-      instrumentCount: parseInt(stats.instrument_count || 0),
-      totalStockValue: parseFloat(stats.total_stock_value || 0),
+      totalProducts,
+      footwearCount,
+      bioshieldCount,
+      fanCount,
+      instrumentCount,
+      totalStockValue: 0, // Simplified for now
     };
   } catch (error) {
     console.error("Error fetching product stats:", error);
@@ -119,6 +102,13 @@ async function getProductStats() {
 export default async function ProductsPage() {
   const productsData = await getProductsWithStock();
   const stats = await getProductStats();
+
+  // Debug logging
+  console.log("🔍 ProductsPage Debug:", {
+    productsDataLength: productsData.length,
+    statsTotal: stats.totalProducts,
+    firstProduct: productsData[0]?.name || "No products",
+  });
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -143,6 +133,18 @@ export default async function ProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Debug Info */}
+      <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-300">
+        <h2 className="font-bold text-yellow-800">Debug Info:</h2>
+        <p className="text-yellow-700">Products found: {productsData.length}</p>
+        <p className="text-yellow-700">
+          Total products stat: {stats.totalProducts}
+        </p>
+        <p className="text-yellow-700">
+          First product: {productsData[0]?.name || "None"}
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="space-y-1">

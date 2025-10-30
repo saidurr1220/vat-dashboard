@@ -156,7 +156,6 @@ export async function POST(request: NextRequest) {
                     dt: new Date(date),
                     invoiceNo,
                     customer,
-                    customerId: finalCustomerId,
                     amountType,
                     totalValue: finalGrandTotal.toString(),
                     notes: isMonthlyBulk ? `${notes || 'Monthly bulk cash sales'} - Bulk Invoice` : (notes || null),

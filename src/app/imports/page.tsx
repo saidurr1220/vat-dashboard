@@ -1,13 +1,14 @@
 import { db } from "@/db/client";
 import { importsBoe } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
+import { safeQuery } from "@/lib/db-utils";
 import Link from "next/link";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = "force-dynamic";
 
 async function getImports() {
-  try {
+  return await safeQuery(async () => {
     const importsData = await db
       .select({
         id: importsBoe.id,
@@ -30,10 +31,7 @@ async function getImports() {
       .limit(100);
 
     return importsData;
-  } catch (error) {
-    console.error("Error fetching imports:", error);
-    return [];
-  }
+  }, []); // Return empty array as fallback
 }
 
 export default async function ImportsPage() {

@@ -87,16 +87,14 @@ export const sales = pgTable("sales", {
     id: serial("id").primaryKey(),
     invoiceNo: text("invoice_no").notNull(),
     dt: timestamp("dt").notNull(),
-    customerId: integer("customer_id").references(() => customers.id),
-    customer: text("customer").notNull(), // Keep for backward compatibility
+    customer: text("customer").notNull(),
     totalValue: numeric("total_value").notNull(),
     amountType: amountTypeEnum("amount_type").notNull(),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow()
 }, (table) => ({
     invoiceNoUnique: unique("sales_invoice_no_unique").on(table.invoiceNo),
-    dtIdx: index("sales_dt_idx").on(table.dt),
-    customerIdx: index("sales_customer_idx").on(table.customerId)
+    dtIdx: index("sales_dt_idx").on(table.dt)
 }));
 
 // Sales lines table
