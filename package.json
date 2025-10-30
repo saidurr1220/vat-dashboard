@@ -30,6 +30,7 @@
         "import:data": "tsx scripts/import-data.ts",
         "export:local": "tsx scripts/export-local-data.ts",
         "import:production": "tsx scripts/import-to-production.ts",
+        "export:all": "tsx scripts/export-all-local-data.ts",
         "backup:db": "tsx scripts/backup-db.ts",
         "setup:production": "tsx scripts/setup-production.ts",
         "postbuild": "echo 'Build completed successfully'"

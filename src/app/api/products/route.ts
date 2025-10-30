@@ -10,11 +10,13 @@ export async function GET() {
             SELECT 
                 p.id,
                 p.name,
-                p.description,
+                p.sku,
+                p.hs_code as "hsCode",
                 p.unit,
                 p.sell_ex_vat as "sellExVat",
                 p.cost_ex_vat as "costExVat",
                 p.category,
+                p.tests_per_kit as "testsPerKit",
                 p.created_at as "createdAt",
                 p.updated_at as "updatedAt"
             FROM products p
@@ -33,11 +35,13 @@ export async function GET() {
             return {
                 id: product.id,
                 name: product.name,
-                description: product.description,
+                sku: product.sku,
+                hsCode: product.hsCode,
                 unit: product.unit,
                 costExVat,
                 sellExVat,
                 category: product.category || 'General',
+                testsPerKit: product.testsPerKit,
                 stockOnHand,
                 stockValue: stockOnHand * costExVat,
                 stockValueVat: stockOnHand * costExVat * 0.15,
@@ -83,8 +87,9 @@ export async function POST(request: NextRequest) {
             .insert(products)
             .values({
                 name: name.trim(),
-                description: body.description?.trim() || null,
-                category: category || 'General',
+                sku: sku?.trim() || null,
+                hsCode: hsCode?.trim() || null,
+                category: category || null,
                 unit: unit.trim(),
                 costExVat: costExVat ? costExVat.toString() : null,
                 sellExVat: sellExVat ? sellExVat.toString() : null,
