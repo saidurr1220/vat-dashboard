@@ -1,0 +1,5 @@
+boe_no,boe_date,office_code,item_no,hs_code,description,assessable_value,base_vat,sd,vat,at,qty,unit
+BOE123456,2025-10-15,DHK001,1,6403.99.00,Footwear - Sports Shoes,50000,7500,0,8625,0,100,Pair
+BOE123456,2025-10-15,DHK001,2,8414.51.00,Table Fan - Ceiling Fan,25000,3750,0,4312.5,0,50,Pc
+BOE789012,2025-10-20,DHK001,1,9027.50.00,Laboratory Equipment,500000,75000,0,86250,0,1,Pc
+BOE789012,2025-10-20,DHK001,2,3822.00.00,Diagnostic Reagents,15000,2250,0,2587.5,0,240,Test
