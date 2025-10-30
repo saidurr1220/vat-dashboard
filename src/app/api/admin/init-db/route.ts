@@ -93,13 +93,13 @@ export async function POST() {
             )
         `);
 
-        // Create sales table with proper structure
+        // Create sales table without foreign key constraints initially
         await db.execute(sql`
             CREATE TABLE IF NOT EXISTS sales (
                 id SERIAL PRIMARY KEY,
                 invoice_no VARCHAR(50) UNIQUE NOT NULL,
                 dt DATE NOT NULL,
-                customer_id INTEGER REFERENCES customers(id),
+                customer_id INTEGER,
                 customer_name VARCHAR(255),
                 total_value DECIMAL(15,2) NOT NULL,
                 amount_type VARCHAR(10) DEFAULT 'EXCL',
@@ -108,12 +108,12 @@ export async function POST() {
             )
         `);
 
-        // Create sales_lines table
+        // Create sales_lines table without foreign key constraints initially
         await db.execute(sql`
             CREATE TABLE IF NOT EXISTS sales_lines (
                 id SERIAL PRIMARY KEY,
-                sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
-                product_id INTEGER REFERENCES products(id),
+                sale_id INTEGER,
+                product_id INTEGER,
                 product_name VARCHAR(255),
                 quantity DECIMAL(10,2) NOT NULL,
                 unit_price DECIMAL(15,2) NOT NULL,
@@ -122,11 +122,11 @@ export async function POST() {
             )
         `);
 
-        // Create stock_ledger table
+        // Create stock_ledger table without foreign key constraints initially
         await db.execute(sql`
             CREATE TABLE IF NOT EXISTS stock_ledger (
                 id SERIAL PRIMARY KEY,
-                product_id INTEGER REFERENCES products(id),
+                product_id INTEGER,
                 transaction_type VARCHAR(20) NOT NULL,
                 reference_no VARCHAR(100),
                 qty_in DECIMAL(10,2) DEFAULT 0,
