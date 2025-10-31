@@ -183,10 +183,46 @@ function useToast() {
         }
     }, [state])
 
+    const showSuccess = (title: string, description?: string) => {
+        toast({
+            title,
+            description,
+            variant: "default",
+        })
+    }
+
+    const showError = (title: string, description?: string) => {
+        toast({
+            title,
+            description,
+            variant: "destructive",
+        })
+    }
+
+    const showWarning = (title: string, description?: string) => {
+        toast({
+            title,
+            description,
+            variant: "default",
+        })
+    }
+
+    const showInfo = (title: string, description?: string) => {
+        toast({
+            title,
+            description,
+            variant: "default",
+        })
+    }
+
     return {
         ...state,
         toast,
         dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+        showSuccess,
+        showError,
+        showWarning,
+        showInfo,
     }
 }
 

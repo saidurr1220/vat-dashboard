@@ -2,7 +2,7 @@ import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import SaleActions from "@/components/SaleActions";
+import SaleActionsWrapper from "@/components/SaleActionsWrapper";
 
 async function getSaleDetails(id: string) {
   try {
@@ -122,7 +122,7 @@ export default async function SaleDetailPage({
               </h1>
               <p className="text-gray-600 mt-1">Invoice #{sale.invoiceNo}</p>
             </div>
-            <SaleActions sale={sale} />
+            <SaleActionsWrapper sale={sale} />
           </div>
         </div>
 

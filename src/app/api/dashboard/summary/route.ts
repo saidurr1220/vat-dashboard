@@ -84,7 +84,7 @@ export async function GET() {
                 )
             );
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             salesSummary: salesSummary[0],
             allTimeSales: allTimeSales[0],
             vatLedgerEntry: vatLedgerEntry[0] || null,
@@ -93,6 +93,11 @@ export async function GET() {
             currentPeriod: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
             timestamp: new Date().toISOString(),
         });
+
+        // Add caching headers for better performance
+        response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
+        return response;
 
     } catch (error) {
         console.error('Error fetching dashboard summary:', error);

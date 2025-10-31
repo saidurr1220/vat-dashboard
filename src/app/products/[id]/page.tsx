@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BoEDataDisplay from "@/components/BoEDataDisplay";
+import ProductDetailsClient from "@/components/ProductDetailsClient";
 
 async function getProductDetails(id: string) {
   try {
@@ -45,20 +46,27 @@ async function getProductDetails(id: string) {
 
     const product = result.rows[0];
 
-    // Get recent stock movements
-    const stockMovements = await db.execute(sql`
-      SELECT 
-        sl.dt,
-        sl.ref_type as "refType",
-        sl.ref_no as "refNo",
-        sl.qty_in as "qtyIn",
-        sl.qty_out as "qtyOut",
-        sl.unit_cost_ex_vat as "unitCostExVat"
-      FROM stock_ledger sl
-      WHERE sl.product_id = ${productId}
-      ORDER BY sl.dt DESC, sl.id DESC
-      LIMIT 10
-    `);
+    // Get recent stock movements (with error handling)
+    let stockMovements = { rows: [] };
+    try {
+      stockMovements = await db.execute(sql`
+        SELECT 
+          sl.dt,
+          sl.ref_type as "refType",
+          sl.ref_no as "refNo",
+          sl.qty_in as "qtyIn",
+          sl.qty_out as "qtyOut",
+          sl.unit_cost_ex_vat as "unitCostExVat"
+        FROM stock_ledger sl
+        WHERE sl.product_id = ${productId}
+        ORDER BY sl.dt DESC, sl.id DESC
+        LIMIT 10
+      `);
+    } catch (error) {
+      console.log("Stock ledger table not available:", error.message);
+      // Return empty stock movements if table doesn't exist
+      stockMovements = { rows: [] };
+    }
 
     return {
       ...product,
@@ -521,6 +529,15 @@ export default async function ProductDetailPage({
             </table>
           </div>
         </div>
+
+        {/* Client-side components for stock adjustment and sales history */}
+        <ProductDetailsClient
+          product={{
+            id: product.id,
+            name: product.name,
+            stockOnHand: stockOnHand,
+          }}
+        />
       </div>
     </div>
   );

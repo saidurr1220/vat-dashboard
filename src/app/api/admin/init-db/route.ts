@@ -141,13 +141,17 @@ export async function POST() {
         await db.execute(sql`
             CREATE TABLE IF NOT EXISTS vat_ledger (
                 id SERIAL PRIMARY KEY,
-                date DATE NOT NULL,
-                description TEXT,
-                amount DECIMAL(15,2) NOT NULL,
-                type VARCHAR(20) NOT NULL,
                 period_year INTEGER NOT NULL,
                 period_month INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                gross_sales DECIMAL(15,2) NOT NULL,
+                net_sales_ex_vat DECIMAL(15,2) NOT NULL,
+                vat_rate DECIMAL(5,4) NOT NULL,
+                vat_payable DECIMAL(15,2) NOT NULL,
+                used_from_closing_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+                treasury_needed DECIMAL(15,2) NOT NULL DEFAULT 0,
+                locked BOOLEAN NOT NULL DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(period_year, period_month)
             )
         `);
 

@@ -6,7 +6,7 @@ export const showToast = {
         toast({
             title: title || "Success",
             description: message,
-            variant: "success",
+            variant: "default",
         })
     },
 
@@ -22,7 +22,7 @@ export const showToast = {
         toast({
             title: title || "Warning",
             description: message,
-            variant: "warning",
+            variant: "default",
         })
     },
 

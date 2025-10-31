@@ -19,6 +19,7 @@ import {
   Edit,
   X,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClosingBalance {
   year: number;
@@ -33,6 +34,7 @@ interface ClosingBalance {
 }
 
 export default function ClosingBalancePage() {
+  const { showSuccess, showError } = useToast();
   const [balances, setBalances] = useState<ClosingBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -136,19 +138,19 @@ export default function ClosingBalancePage() {
       const result = await response.json();
 
       if (response.ok) {
-        alert(`Migration successful! ${result.message}`);
+        showSuccess("Migration Successful", result.message);
         await fetchBalances();
       } else {
         console.error("Migration API Error:", result);
-        alert(
-          `Migration failed: ${result.error || "Unknown error"}\nDetails: ${
-            result.details || "Check console for more info"
-          }`
+        showError(
+          "Migration Failed",
+          result.error || "Unknown error occurred during migration"
         );
       }
     } catch (error) {
       console.error("Migration network error:", error);
-      alert(
+      showError(
+        "Migration Failed",
         "Migration failed due to network error. Please check the console for details."
       );
     } finally {
@@ -185,14 +187,14 @@ export default function ClosingBalancePage() {
           usedAmount: "",
           notes: "",
         });
-        alert("Balance saved successfully!");
+        showSuccess("Balance Saved", "Balance saved successfully!");
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+        showError("Save Failed", errorData.error);
       }
     } catch (error) {
       console.error("Error saving balance:", error);
-      alert("Failed to save balance");
+      showError("Save Failed", "Failed to save balance");
     } finally {
       setSaving(false);
     }
@@ -241,14 +243,14 @@ export default function ClosingBalancePage() {
           usedAmount: "",
           notes: "",
         });
-        alert("Balance updated successfully!");
+        showSuccess("Balance Updated", "Balance updated successfully!");
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+        showError("Update Failed", errorData.error);
       }
     } catch (error) {
       console.error("Error updating balance:", error);
-      alert("Failed to update balance");
+      showError("Update Failed", "Failed to update balance");
     } finally {
       setSaving(false);
     }

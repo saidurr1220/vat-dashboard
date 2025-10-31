@@ -3,9 +3,12 @@ import { db } from '@/db/client';
 import { products, salesLines, stockLedger } from '@/db/schema';
 import { sql } from 'drizzle-orm';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
-        // Get products with basic stock calculation (simplified for production)
+        const { searchParams } = new URL(request.url);
+        const summary = searchParams.get('summary') === 'true';
+
+        // Get products with stock information
         const result = await db.execute(sql`
             SELECT 
                 p.id,
@@ -17,20 +20,57 @@ export async function GET() {
                 p.cost_ex_vat as "costExVat",
                 p.category,
                 p.tests_per_kit as "testsPerKit",
+                p.stock_on_hand as "stockOnHand",
                 p.created_at as "createdAt",
                 p.updated_at as "updatedAt"
             FROM products p
             ORDER BY p.id
         `);
 
-        // Calculate stock values with fallback for missing stock data
-        const productsWithStock = result.rows.map((product: any) => {
-            const costExVat = Number(product.sellExVat || product.costExVat || 0);
-            const sellExVat = Number(product.sellExVat || product.costExVat || 0);
+        // For summary requests, skip expensive calculations
+        if (summary) {
+            const productsWithStock = result.rows.map((product: any) => ({
+                id: product.id,
+                name: product.name,
+                sku: product.sku,
+                hsCode: product.hsCode,
+                unit: product.unit,
+                costExVat: Number(product.costExVat || 0),
+                sellExVat: Number(product.sellExVat || 0),
+                category: product.category || 'General',
+                testsPerKit: product.testsPerKit,
+                stockOnHand: Number(product.stockOnHand || 0),
+                totalSold: 0, // Skip expensive calculation for summary
+                stockValue: Number(product.stockOnHand || 0) * Number(product.costExVat || 0),
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt
+            }));
 
-            // For now, set stock to 0 since we don't have stock_ledger data
-            // This can be enhanced later when stock management is fully implemented
-            const stockOnHand = 0;
+            const response = NextResponse.json(productsWithStock);
+            response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+            return response;
+        }
+
+        // Calculate stock values and get sales data for full requests
+        const productsWithStock = await Promise.all(result.rows.map(async (product: any) => {
+            const costExVat = Number(product.costExVat || 0);
+            const sellExVat = Number(product.sellExVat || 0);
+            const stockOnHand = Number(product.stockOnHand || 0);
+
+            // Get total sold quantity from sales_lines (skip for performance)
+            let totalSold = 0;
+            // Commenting out expensive query for better performance
+            // try {
+            //     const salesResult = await db.execute(sql`
+            //         SELECT COALESCE(SUM(CAST(qty AS NUMERIC)), 0) as total_sold
+            //         FROM sales_lines 
+            //         WHERE product_id = ${product.id}
+            //     `);
+            //     totalSold = Number(salesResult.rows[0]?.total_sold || 0);
+            // } catch (error) {
+            //     console.log(`Sales calculation failed for product ${product.id}:`, error);
+            //     totalSold = 0;
+            // }
 
             return {
                 id: product.id,
@@ -43,15 +83,18 @@ export async function GET() {
                 category: product.category || 'General',
                 testsPerKit: product.testsPerKit,
                 stockOnHand,
+                totalSold,
                 stockValue: stockOnHand * costExVat,
                 stockValueVat: stockOnHand * costExVat * 0.15,
                 stockValueIncVat: stockOnHand * costExVat * 1.15,
                 createdAt: product.createdAt,
                 updatedAt: product.updatedAt
             };
-        });
+        }));
 
-        return NextResponse.json(productsWithStock);
+        const response = NextResponse.json(productsWithStock);
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+        return response;
     } catch (error) {
         console.error('Error fetching products:', error);
         return NextResponse.json(

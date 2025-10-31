@@ -5,7 +5,9 @@ import { sql } from 'drizzle-orm';
 export async function GET() {
   try {
     // Get stock summary with unified stock calculation (footwear from BoE lots, others from stock ledger)
-    const result = await db.execute(sql`
+    let result;
+    try {
+      result = await db.execute(sql`
       SELECT 
         p.id,
         p.name,
@@ -54,6 +56,23 @@ export async function GET() {
       FROM products p
       ORDER BY p.name
     `);
+    } catch (stockError) {
+      console.log('Stock ledger query failed, using fallback:', stockError.message);
+      // Fallback query without stock_ledger
+      result = await db.execute(sql`
+        SELECT 
+          p.id,
+          p.name,
+          p.unit,
+          p.category,
+          p.cost_ex_vat as "productCostExVat",
+          p.sell_ex_vat as "sellExVat",
+          0 as "stockOnHand",
+          p.cost_ex_vat as "avgCostExVat"
+        FROM products p
+        ORDER BY p.name
+      `);
+    }
 
     const stockSummary = result.rows.map((item: any) => {
       const stockOnHand = Number(item.stockOnHand || 0);

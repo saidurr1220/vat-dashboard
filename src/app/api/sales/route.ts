@@ -7,6 +7,23 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const limit = parseInt(searchParams.get('limit') || '50');
+        const summary = searchParams.get('summary') === 'true';
+
+        if (summary) {
+            // Fast query for summary data
+            const salesData = await db.execute(sql`
+                SELECT 
+                    s.id,
+                    s.invoice_no as "invoiceNo",
+                    s.dt,
+                    s.customer,
+                    s.total_value as "totalValue"
+                FROM sales s
+                ORDER BY s.dt DESC, s.id DESC
+                LIMIT ${limit}
+            `);
+            return NextResponse.json(salesData.rows);
+        }
 
         const salesData = await db.execute(sql`
             SELECT 
@@ -126,23 +143,13 @@ export async function POST(request: NextRequest) {
                 const category = productResult.rows[0].category;
                 let currentStock = 0;
 
-                if (category === 'Footwear') {
-                    // For footwear, check boe_lots
-                    const stockResult = await tx.execute(sql`
-                        SELECT COALESCE(SUM(closing_pairs), 0) as stock
-                        FROM boe_lots 
-                        WHERE product_id = ${line.productId}
-                    `);
-                    currentStock = Number(stockResult.rows[0]?.stock || 0);
-                } else {
-                    // For other products, check stock_ledger
-                    const stockResult = await tx.execute(sql`
-                        SELECT COALESCE(SUM(qty_in::numeric) - SUM(qty_out::numeric), 0) as stock
-                        FROM stock_ledger 
-                        WHERE product_id = ${line.productId}
-                    `);
-                    currentStock = Number(stockResult.rows[0]?.stock || 0);
-                }
+                // For all products, check stock_on_hand in products table
+                const stockResult = await tx.execute(sql`
+                    SELECT COALESCE(stock_on_hand, 0) as stock
+                    FROM products 
+                    WHERE id = ${line.productId}
+                `);
+                currentStock = Number(stockResult.rows[0]?.stock || 0);
 
                 if (currentStock < line.qty) {
                     throw new Error(`Insufficient stock for product ID ${line.productId}. Available: ${currentStock}, Required: ${line.qty}`);
@@ -184,44 +191,12 @@ export async function POST(request: NextRequest) {
 
                 const category = productResult.rows[0]?.category;
 
-                if (category === 'Footwear') {
-                    // For footwear, update boe_lots by reducing closing_pairs
-                    // We need to reduce from the oldest lots first (FIFO)
-                    let remainingQty = line.qty;
-
-                    const lotsResult = await tx.execute(sql`
-                        SELECT id, closing_pairs 
-                        FROM boe_lots 
-                        WHERE product_id = ${line.productId} AND closing_pairs > 0
-                        ORDER BY boe_date ASC, id ASC
-                    `);
-
-                    for (const lot of lotsResult.rows) {
-                        if (remainingQty <= 0) break;
-
-                        const lotClosingPairs = Number(lot.closing_pairs);
-                        const deductQty = Math.min(remainingQty, lotClosingPairs);
-                        const newClosingPairs = lotClosingPairs - deductQty;
-
-                        await tx.execute(sql`
-                            UPDATE boe_lots 
-                            SET closing_pairs = ${newClosingPairs}
-                            WHERE id = ${lot.id}
-                        `);
-
-                        remainingQty -= deductQty;
-                    }
-
-                    if (remainingQty > 0) {
-                        throw new Error(`Insufficient footwear stock for product ID ${line.productId}`);
-                    }
-                } else {
-                    // For other products, use stock_ledger
-                    await tx.execute(sql`
-                        INSERT INTO stock_ledger (dt, product_id, ref_type, ref_no, qty_in, qty_out, unit_cost_ex_vat)
-                        VALUES (${new Date(date)}, ${line.productId}, 'SALE', ${invoiceNo}, 0, ${line.qty}, 0)
-                    `);
-                }
+                // For all products, update stock_on_hand in products table
+                await tx.execute(sql`
+                    UPDATE products 
+                    SET stock_on_hand = COALESCE(stock_on_hand, 0) - ${line.qty}
+                    WHERE id = ${line.productId}
+                `);
             }
 
             return sale;

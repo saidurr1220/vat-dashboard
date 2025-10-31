@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   FileText,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface MonthlySales {
   year: number;
@@ -58,6 +59,7 @@ interface VATComputation {
 }
 
 export default function MonthlyVATPage() {
+  const { showSuccess, showError, showWarning } = useToast();
   const [loading, setLoading] = useState(true);
   const [computing, setComputing] = useState(false);
   const [selectedYear, setSelectedYear] = useState(2022);
@@ -111,6 +113,10 @@ export default function MonthlyVATPage() {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      showError(
+        "Data Loading Failed",
+        "Failed to load VAT data. Please refresh the page."
+      );
     } finally {
       setLoading(false);
     }
@@ -155,12 +161,12 @@ export default function MonthlyVATPage() {
   const computeVAT = async () => {
     const salesData = getCurrentMonthSales();
     if (!salesData) {
-      alert("No sales data found for selected month");
+      showError("No Sales Data", "No sales data found for selected month");
       return;
     }
 
     if (!treasuryAmount) {
-      alert("Please enter treasury challan amount");
+      showError("Missing Information", "Please enter treasury challan amount");
       return;
     }
 
@@ -169,13 +175,11 @@ export default function MonthlyVATPage() {
 
     if (usedAmount + treasuryAmountNum < salesData.totalVAT) {
       const shortfall = salesData.totalVAT - (usedAmount + treasuryAmountNum);
-      if (
-        !confirm(
-          `VAT shortfall of ৳${shortfall.toLocaleString()}. Continue anyway?`
-        )
-      ) {
-        return;
-      }
+      showWarning(
+        "VAT Shortfall Detected",
+        `VAT shortfall of ৳${shortfall.toLocaleString()}. Please review your amounts.`
+      );
+      // Still allow computation to proceed
     }
 
     setComputing(true);
@@ -198,7 +202,10 @@ export default function MonthlyVATPage() {
       });
 
       if (response.ok) {
-        alert("VAT computation saved successfully!");
+        showSuccess(
+          "VAT Computation Saved",
+          "VAT computation saved successfully!"
+        );
         await fetchData();
 
         // Reset form
@@ -206,11 +213,11 @@ export default function MonthlyVATPage() {
         setTreasuryAmount("");
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error || "Failed to compute VAT"}`);
+        showError("Computation Failed", error.error || "Failed to compute VAT");
       }
     } catch (error) {
       console.error("Error computing VAT:", error);
-      alert("Failed to compute VAT");
+      showError("Computation Failed", "Failed to compute VAT");
     } finally {
       setComputing(false);
     }
@@ -218,7 +225,7 @@ export default function MonthlyVATPage() {
 
   const addTreasuryChallan = async () => {
     if (!treasuryAmount) {
-      alert("Please enter treasury amount");
+      showError("Missing Information", "Please enter treasury amount");
       return;
     }
 
@@ -241,15 +248,21 @@ export default function MonthlyVATPage() {
       });
 
       if (response.ok) {
-        alert("Treasury challan added successfully!");
+        showSuccess(
+          "Treasury Challan Added",
+          "Treasury challan added successfully!"
+        );
         await fetchData();
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error || "Failed to add treasury challan"}`);
+        showError(
+          "Challan Failed",
+          error.error || "Failed to add treasury challan"
+        );
       }
     } catch (error) {
       console.error("Error adding treasury challan:", error);
-      alert("Failed to add treasury challan");
+      showError("Challan Failed", "Failed to add treasury challan");
     }
   };
 
@@ -443,19 +456,18 @@ export default function MonthlyVATPage() {
                   <Label htmlFor="usedFromClosing">
                     Amount from Closing Balance (Auto-calculated)
                   </Label>
-                  <Input
-                    id="usedFromClosing"
-                    type="number"
-                    step="0.01"
-                    value={usedFromClosing}
-                    readOnly
-                    className="bg-gray-50"
-                    placeholder="0.00"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Available: ৳
-                    {closingBalance?.closingBalance.toLocaleString() || "0"}
-                  </p>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-lg font-bold text-blue-900">
+                      ৳
+                      {usedFromClosing
+                        ? Number(usedFromClosing).toLocaleString()
+                        : "0"}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Available: ৳
+                      {closingBalance?.closingBalance.toLocaleString() || "0"}
+                    </p>
+                  </div>
                 </div>
 
                 {usedFromClosing && treasuryAmount && (

@@ -38,33 +38,45 @@ export default async function ImportsPage() {
   const importsData = await getImports();
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Imports (BoE)</h1>
           <p className="text-gray-600">
             Bill of Entry records and cost breakdown
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Link
-            href="/api/imports/export"
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+            href="/imports/new"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
-            Export CSV
+            Add Single BoE
           </Link>
           <Link
             href="/imports/upload"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
-            Import BoE Data
+            Bulk Import
+          </Link>
+          <Link
+            href="/api/imports/export"
+            className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Export CSV
           </Link>
         </div>
       </div>
 
+      {/* Import Records */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">Import Records</h2>
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Import Records
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Recent Bill of Entry records
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -168,7 +180,7 @@ export default async function ImportsPage() {
             <div className="flex justify-between text-sm text-gray-600">
               <span>Showing {importsData.length} import records</span>
               <span>
-                Total Value: ৳
+                Page Total: ৳
                 {importsData
                   .reduce((sum, record) => {
                     const totalCost =
@@ -187,30 +199,30 @@ export default async function ImportsPage() {
       </div>
 
       {/* Cost Breakdown Info */}
-      <div className="mt-6 bg-blue-50 rounded-lg p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-4">
           Cost Breakdown Components
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
-          <div className="bg-white rounded p-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
             <div className="font-medium text-gray-900">Assessable Value</div>
-            <div className="text-gray-600">Base import value</div>
+            <div className="text-gray-600 text-xs mt-1">Base import value</div>
           </div>
-          <div className="bg-white rounded p-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
             <div className="font-medium text-gray-900">Base VAT</div>
-            <div className="text-gray-600">Base VAT amount</div>
+            <div className="text-gray-600 text-xs mt-1">Base VAT amount</div>
           </div>
-          <div className="bg-white rounded p-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
             <div className="font-medium text-gray-900">SD</div>
-            <div className="text-gray-600">Supplementary Duty</div>
+            <div className="text-gray-600 text-xs mt-1">Supplementary Duty</div>
           </div>
-          <div className="bg-white rounded p-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
             <div className="font-medium text-gray-900">VAT</div>
-            <div className="text-gray-600">Value Added Tax</div>
+            <div className="text-gray-600 text-xs mt-1">Value Added Tax</div>
           </div>
-          <div className="bg-white rounded p-3">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
             <div className="font-medium text-gray-900">AT</div>
-            <div className="text-gray-600">Advance Tax</div>
+            <div className="text-gray-600 text-xs mt-1">Advance Tax</div>
           </div>
         </div>
       </div>

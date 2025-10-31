@@ -22,16 +22,16 @@ async function getVATReports() {
         month: sql<number>`EXTRACT(MONTH FROM ${sales.dt})`,
         grossSales: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
         vatAmount: sql<number>`COALESCE(SUM(
-        (CASE 
+        CASE 
           WHEN ${sales.amountType} = 'INCL' 
-          THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric * 0.15 / 1.15)
-          ELSE ${sales.totalValue}::numeric
-        END) * 0.15
+          THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric / 1.15)
+          ELSE ${sales.totalValue}::numeric * 0.15
+        END
       ), 0)`,
         netSales: sql<number>`COALESCE(SUM(
         CASE 
           WHEN ${sales.amountType} = 'INCL' 
-          THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric * 0.15 / 1.15)
+          THEN ${sales.totalValue}::numeric / 1.15
           ELSE ${sales.totalValue}::numeric
         END
       ), 0)`,

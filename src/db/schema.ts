@@ -4,7 +4,7 @@ import { pgTable, serial, text, integer, timestamp, numeric, pgEnum, boolean, js
 export const amountTypeEnum = pgEnum("amount_type", ["INCL", "EXCL"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["CASH", "BANK", "CARD", "MOBILE"]);
 export const refTypeEnum = pgEnum("ref_type", ["OPENING", "IMPORT", "SALE", "ADJUST"]);
-export const categoryEnum = pgEnum("category", ["Footwear", "Fan", "BioShield", "Instrument"]);
+export const categoryEnum = pgEnum("category", ["Footwear", "Fan", "BioShield", "Instrument", "Appliance Parts", "Reagent"]);
 
 // Settings table (singleton)
 export const settings = pgTable("settings", {
@@ -88,6 +88,7 @@ export const sales = pgTable("sales", {
     invoiceNo: text("invoice_no").notNull(),
     dt: timestamp("dt").notNull(),
     customer: text("customer").notNull(),
+    customerId: integer("customer_id").references(() => customers.id),
     totalValue: numeric("total_value").notNull(),
     amountType: amountTypeEnum("amount_type").notNull(),
     notes: text("notes"),
