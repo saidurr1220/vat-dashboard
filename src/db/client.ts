@@ -16,8 +16,7 @@ const pool = new Pool({
     max: 3, // Smaller pool for Neon's connection limits
     min: 0, // Allow pool to scale to zero
     idleTimeoutMillis: 5000, // Shorter idle timeout for faster cleanup
-    connectionTimeoutMillis: 10000, // Shorter connection timeout
-    acquireTimeoutMillis: 8000, // Timeout for acquiring connections
+    connectionTimeoutMillis: 8000, // Timeout for acquiring connections
     // SSL is required for Neon
     ssl: getDatabaseUrl().includes('neon.tech') ? { rejectUnauthorized: false } :
         process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

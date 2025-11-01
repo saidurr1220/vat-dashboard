@@ -87,6 +87,7 @@ export default function FootwearManagementPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "stock" | "value">("name");
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     loadFootwearData();
@@ -400,7 +401,11 @@ export default function FootwearManagementPage() {
           </div>
         )}
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="groups">Product Groups</TabsTrigger>

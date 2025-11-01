@@ -57,7 +57,7 @@ export async function GET() {
       ORDER BY p.name
     `);
     } catch (stockError) {
-      console.log('Stock ledger query failed, using fallback:', stockError.message);
+      console.log('Stock ledger query failed, using fallback:', stockError instanceof Error ? stockError.message : 'Unknown error');
       // Fallback query without stock_ledger
       result = await db.execute(sql`
         SELECT 

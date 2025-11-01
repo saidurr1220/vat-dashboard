@@ -61,7 +61,10 @@ async function getProductDetails(id: string) {
         LIMIT 10
       `);
     } catch (error) {
-      console.log("Stock ledger table not available:", error.message);
+      console.log(
+        "Stock ledger table not available:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       // Return empty stock movements if table doesn't exist
       stockMovements = { rows: [] };
     }
