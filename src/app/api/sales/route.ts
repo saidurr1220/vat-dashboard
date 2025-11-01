@@ -71,14 +71,24 @@ export async function POST(request: NextRequest) {
             isMonthlyBulk
         } = body;
 
-        // For monthly bulk sales, use line amounts as final total
-        // Line amounts are calculated on frontend based on product prices
+        // Calculate totals based on lines and amount type
         let finalGrandTotal = grandTotal;
+
         if (isMonthlyBulk && lines && lines.length > 0) {
+            // For monthly bulk sales, calculate from line amounts
             const subtotal = lines.reduce((sum: number, line: any) => sum + Number(line.lineAmount || 0), 0);
-            // For monthly bulk, the line amounts are the final amounts
-            // VAT calculation is handled on the frontend display
             finalGrandTotal = subtotal;
+        } else if (lines && lines.length > 0) {
+            // For regular sales, calculate VAT based on amount type
+            const subtotal = lines.reduce((sum: number, line: any) => sum + Number(line.lineAmount || 0), 0);
+
+            if (amountType === "EXCL") {
+                // VAT Exclusive: Add 15% VAT on top of subtotal
+                finalGrandTotal = subtotal + (subtotal * 0.15);
+            } else {
+                // VAT Inclusive: subtotal already includes VAT
+                finalGrandTotal = subtotal;
+            }
         }
 
         // Validate required fields
