@@ -388,20 +388,16 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
                       </tr>
                     ))}
 
-                    {/* Empty rows for standard format */}
-                    {Array.from({
-                      length: Math.max(0, 3 - sale.saleLines.length),
-                    }).map((_, index) => (
-                      <tr key={`empty-${index}`} className="bg-gray-25 h-12">
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4 border-r border-gray-200">&nbsp;</td>
-                        <td className="p-4">&nbsp;</td>
-                      </tr>
-                    ))}
+                    {/* Minimal empty rows for print */}
+                    <tr className="bg-gray-25 h-6 print:hidden">
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4 border-r border-gray-200">&nbsp;</td>
+                      <td className="p-4">&nbsp;</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -475,7 +471,7 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
                   </div>
 
                   {/* Amount in Words */}
-                  <div className="bg-white p-6 rounded-lg shadow-md border">
+                  <div className="bg-white p-6 rounded-lg shadow-md border print:compact">
                     <h5 className="font-semibold text-gray-900 mb-2">
                       Amount in Words:
                     </h5>
@@ -534,7 +530,15 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
         @media print {
           @page {
             size: A4;
-            margin: 0.3in;
+            margin: 0.15in;
+          }
+
+          @page:first {
+            margin: 0.15in;
+          }
+
+          @page:blank {
+            display: none;
           }
 
           * {
@@ -547,8 +551,8 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
           body {
             margin: 0 !important;
             padding: 0 !important;
-            font-size: 10px !important;
-            line-height: 1.1 !important;
+            font-size: 9px !important;
+            line-height: 1 !important;
             width: 100% !important;
             height: auto !important;
           }
@@ -575,13 +579,13 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
           }
 
           .p-8 {
-            padding: 8px !important;
+            padding: 4px !important;
           }
           .p-6 {
-            padding: 6px !important;
+            padding: 3px !important;
           }
           .p-4 {
-            padding: 4px !important;
+            padding: 2px !important;
           }
 
           .bg-gradient-to-r {
@@ -592,16 +596,16 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
           table {
             width: 100% !important;
             border-collapse: collapse !important;
-            font-size: 9px !important;
+            font-size: 8px !important;
             margin: 0 !important;
           }
 
           th,
           td {
-            padding: 2px 3px !important;
+            padding: 1px 2px !important;
             border: 1px solid #000 !important;
-            font-size: 9px !important;
-            line-height: 1.1 !important;
+            font-size: 8px !important;
+            line-height: 1 !important;
           }
 
           th {
@@ -618,84 +622,105 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
           }
 
           .text-4xl {
-            font-size: 18px !important;
-          }
-          .text-3xl {
             font-size: 16px !important;
           }
-          .text-2xl {
+          .text-3xl {
             font-size: 14px !important;
           }
-          .text-xl {
+          .text-2xl {
             font-size: 12px !important;
           }
-          .text-lg {
-            font-size: 11px !important;
-          }
-          .text-base {
+          .text-xl {
             font-size: 10px !important;
           }
-          .text-sm {
+          .text-lg {
             font-size: 9px !important;
           }
-          .text-xs {
+          .text-base {
             font-size: 8px !important;
+          }
+          .text-sm {
+            font-size: 7px !important;
+          }
+          .text-xs {
+            font-size: 6px !important;
           }
 
           .gap-8 {
-            gap: 6px !important;
-          }
-          .gap-6 {
-            gap: 4px !important;
-          }
-          .gap-4 {
             gap: 3px !important;
           }
-          .gap-3 {
+          .gap-6 {
             gap: 2px !important;
           }
-          .gap-2 {
+          .gap-4 {
             gap: 1px !important;
+          }
+          .gap-3 {
+            gap: 1px !important;
+          }
+          .gap-2 {
+            gap: 0px !important;
           }
 
           .space-y-6 > * + * {
-            margin-top: 4px !important;
-          }
-          .space-y-4 > * + * {
-            margin-top: 3px !important;
-          }
-          .space-y-3 > * + * {
             margin-top: 2px !important;
           }
-          .space-y-2 > * + * {
+          .space-y-4 > * + * {
             margin-top: 1px !important;
+          }
+          .space-y-3 > * + * {
+            margin-top: 1px !important;
+          }
+          .space-y-2 > * + * {
+            margin-top: 0px !important;
           }
 
           .mb-3 {
-            margin-bottom: 2px !important;
-          }
-          .mb-2 {
             margin-bottom: 1px !important;
           }
+          .mb-2 {
+            margin-bottom: 0px !important;
+          }
           .mt-8 {
-            margin-top: 6px !important;
+            margin-top: 3px !important;
           }
           .pt-6 {
-            padding-top: 4px !important;
+            padding-top: 2px !important;
           }
 
           .h-20 {
-            height: 25px !important;
+            height: 15px !important;
           }
 
+          /* Scale entire invoice to fit on one page */
           .invoice-container {
-            page-break-inside: avoid;
             width: 100% !important;
+            transform: scale(0.75);
+            transform-origin: top left;
+            margin: 0 !important;
+            page-break-inside: avoid !important;
+          }
+
+          /* Adjust container width to compensate for scaling */
+          .container {
+            width: 133% !important;
+            max-width: 133% !important;
           }
 
           /* Force single page layout */
           .min-h-screen {
             min-height: auto !important;
+          }
+
+          /* Prevent all page breaks */
+          * {
+            page-break-before: avoid !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          body {
+            overflow: hidden !important;
           }
 
           /* Add print-specific utility classes */

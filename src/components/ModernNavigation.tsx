@@ -53,7 +53,7 @@ export default function ModernNavigation() {
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-4 left-4 z-50 print:hidden">
         <Button
           variant="outline"
           size="icon"
@@ -71,7 +71,7 @@ export default function ModernNavigation() {
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 print:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -79,7 +79,7 @@ export default function ModernNavigation() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border shadow-lg transform transition-transform duration-200 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border shadow-lg transform transition-transform duration-200 ease-in-out print:hidden",
           "lg:translate-x-0",
           isMobileMenuOpen
             ? "translate-x-0"

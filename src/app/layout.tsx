@@ -17,8 +17,10 @@ export default function RootLayout({
       <body className="min-h-screen bg-background" suppressHydrationWarning>
         <ClientWrapper>
           <ModernNavigation />
-          <main className="lg:ml-64 min-h-screen bg-background">
-            <div className="p-4 lg:p-6 pt-16 lg:pt-6">{children}</div>
+          <main className="lg:ml-64 min-h-screen bg-background print:ml-0 print:w-full">
+            <div className="p-4 lg:p-6 pt-16 lg:pt-6 print:p-0 print:pt-0">
+              {children}
+            </div>
           </main>
           <Toaster />
         </ClientWrapper>
