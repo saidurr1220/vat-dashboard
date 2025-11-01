@@ -9,7 +9,7 @@ interface SaleActionsProps {
   sale: {
     id: number;
     invoiceNo: string;
-    date: string;
+    dt: string;
     customer: string;
     customerName?: string;
     customerAddress?: string;
@@ -53,9 +53,9 @@ export default function SaleActions({ sale }: SaleActionsProps) {
             
             <div class="invoice-details">
               <p><strong>Invoice No:</strong> ${sale.invoiceNo}</p>
-              <p><strong>Date:</strong> ${new Date(
-                sale.date
-              ).toLocaleDateString("en-GB")}</p>
+              <p><strong>Date:</strong> ${new Date(sale.dt).toLocaleDateString(
+                "en-GB"
+              )}</p>
             </div>
             
             <div class="customer-info">

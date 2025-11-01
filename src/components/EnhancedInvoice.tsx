@@ -126,7 +126,7 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
                 className="gap-2"
               >
                 <Printer className="w-4 h-4" />
-                Print
+                Print (Ctrl+P)
               </Button>
               <Button
                 size="sm"
@@ -134,7 +134,7 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
                 className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <Download className="w-4 h-4" />
-                Download PDF
+                Save as PDF
               </Button>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
       <div className="container mx-auto px-4 py-8 print:p-0 print:m-0">
         <div className="max-w-4xl mx-auto">
           {/* Enhanced Invoice Design */}
-          <div className="bg-white shadow-2xl print:shadow-none border print:border-0 rounded-lg print:rounded-none overflow-hidden">
+          <div className="invoice-container bg-white shadow-2xl print:shadow-none border print:border-0 rounded-lg print:rounded-none overflow-hidden">
             {/* Header with Gradient */}
             <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-8 print:bg-gray-800">
               {/* Decorative Pattern */}
@@ -193,7 +193,7 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
                     <div className="flex items-center gap-3">
                       <span className="text-blue-200">Date:</span>
                       <span className="font-mono font-semibold">
-                        {new Date(sale.date).toLocaleDateString("en-GB", {
+                        {new Date(sale.dt).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",
@@ -529,43 +529,198 @@ export default function EnhancedInvoice({ sale }: EnhancedInvoiceProps) {
         </div>
       </div>
 
-      {/* Print Styles */}
+      {/* Print Styles - Optimized for A4 */}
       <style jsx global>{`
         @media print {
-          body {
-            margin: 0;
-            padding: 0;
+          /* Reset page margins and setup A4 */
+          @page {
+            size: A4;
+            margin: 0.5in;
           }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            font-size: 12px !important;
+            line-height: 1.3 !important;
+          }
+
+          /* Hide non-print elements */
           .print\\:hidden {
             display: none !important;
           }
-          .print\\:shadow-none {
-            box-shadow: none !important;
-          }
-          .print\\:border-0 {
-            border: 0 !important;
-          }
-          .print\\:rounded-none {
-            border-radius: 0 !important;
-          }
-          .print\\:p-0 {
+
+          /* Main container adjustments */
+          .container {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
             padding: 0 !important;
           }
-          .print\\:m-0 {
+
+          /* Invoice container */
+          .max-w-4xl {
+            max-width: none !important;
+            width: 100% !important;
             margin: 0 !important;
           }
-          .print\\:bg-gray-800 {
-            background-color: #1f2937 !important;
+
+          /* Remove shadows and borders for print */
+          .shadow-2xl,
+          .shadow-lg,
+          .shadow-md {
+            box-shadow: none !important;
           }
 
-          /* Ensure proper page breaks */
+          .rounded-lg,
+          .rounded {
+            border-radius: 0 !important;
+          }
+
+          /* Adjust padding for print */
+          .p-8 {
+            padding: 12px !important;
+          }
+
+          .p-6 {
+            padding: 8px !important;
+          }
+
+          .p-4 {
+            padding: 6px !important;
+          }
+
+          /* Header adjustments */
+          .bg-gradient-to-r {
+            background: #1f2937 !important;
+            color: white !important;
+          }
+
+          /* Table adjustments */
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 11px !important;
+          }
+
+          th,
+          td {
+            padding: 4px 6px !important;
+            border: 1px solid #000 !important;
+            font-size: 11px !important;
+          }
+
+          th {
+            background-color: #f3f4f6 !important;
+            font-weight: bold !important;
+          }
+
+          /* Grid adjustments for print */
+          .grid-cols-1.lg\\:grid-cols-2 {
+            grid-template-columns: 1fr 1fr !important;
+          }
+
+          .grid-cols-1.md\\:grid-cols-3 {
+            grid-template-columns: 1fr 1fr 1fr !important;
+          }
+
+          /* Font size adjustments */
+          .text-4xl {
+            font-size: 24px !important;
+          }
+
+          .text-3xl {
+            font-size: 20px !important;
+          }
+
+          .text-2xl {
+            font-size: 18px !important;
+          }
+
+          .text-xl {
+            font-size: 16px !important;
+          }
+
+          .text-lg {
+            font-size: 14px !important;
+          }
+
+          /* Spacing adjustments */
+          .gap-8 {
+            gap: 12px !important;
+          }
+
+          .gap-6 {
+            gap: 8px !important;
+          }
+
+          .gap-4 {
+            gap: 6px !important;
+          }
+
+          .space-y-6 > * + * {
+            margin-top: 8px !important;
+          }
+
+          .space-y-4 > * + * {
+            margin-top: 6px !important;
+          }
+
+          .space-y-3 > * + * {
+            margin-top: 4px !important;
+          }
+
+          .space-y-2 > * + * {
+            margin-top: 3px !important;
+          }
+
+          /* Background colors for print */
+          .bg-gray-50 {
+            background-color: #f9fafb !important;
+          }
+
+          .bg-white {
+            background-color: white !important;
+          }
+
+          .bg-blue-50 {
+            background-color: #eff6ff !important;
+          }
+
+          .bg-green-50 {
+            background-color: #f0fdf4 !important;
+          }
+
+          .bg-yellow-50 {
+            background-color: #fefce8 !important;
+          }
+
+          .bg-orange-50 {
+            background-color: #fff7ed !important;
+          }
+
+          /* Ensure page breaks */
           .invoice-container {
             page-break-inside: avoid;
           }
 
-          /* Optimize colors for print */
-          .bg-gradient-to-r {
-            background: #1f2937 !important;
+          /* Signature section */
+          .h-20 {
+            height: 40px !important;
+          }
+
+          /* Remove margins from last elements */
+          .mb-8:last-child {
+            margin-bottom: 0 !important;
           }
         }
       `}</style>

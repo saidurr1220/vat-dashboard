@@ -6,7 +6,7 @@ import Link from "next/link";
 interface Sale {
   id: number;
   invoiceNo: string;
-  date: string;
+  dt: string;
   customer: string;
   customerDisplay: string;
   amountType: string;
@@ -263,7 +263,7 @@ export default function SalesHistoryPage() {
                 salesHistory?.sales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(sale.date).toLocaleDateString("en-GB")}
+                      {new Date(sale.dt).toLocaleDateString("en-GB")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {sale.invoiceNo}

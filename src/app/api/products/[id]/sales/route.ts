@@ -22,7 +22,7 @@ export async function GET(
       SELECT 
         sl.id,
         s.invoice_no as "invoiceNo",
-        s.dt as date,
+        s.dt,
         s.customer,
         sl.qty::numeric as qty,
         sl.unit_price_value::numeric as "unitPrice",
@@ -37,7 +37,7 @@ export async function GET(
         const soldItems = salesHistory.rows.map((item: any) => ({
             id: item.id,
             invoiceNo: item.invoiceNo,
-            date: item.date,
+            dt: item.dt,
             customer: item.customer,
             qty: Number(item.qty),
             unitPrice: Number(item.unitPrice),

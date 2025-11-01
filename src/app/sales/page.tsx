@@ -25,7 +25,17 @@ async function getSales() {
   try {
     // First, try to get sales without the join to see if that works
     const result = await db
-      .select()
+      .select({
+        id: sales.id,
+        invoiceNo: sales.invoiceNo,
+        dt: sales.dt,
+        createdAt: sales.createdAt,
+        customer: sales.customer,
+        customerId: sales.customerId,
+        amountType: sales.amountType,
+        totalValue: sales.totalValue,
+        notes: sales.notes,
+      })
       .from(sales)
       .orderBy(desc(sales.dt), desc(sales.id))
       .limit(50);
@@ -52,7 +62,18 @@ async function getSales() {
       return {
         id: sale.id,
         invoiceNo: sale.invoiceNo,
-        date: sale.dt,
+        dt: (() => {
+          // Ensure we always return a valid date
+          if (sale.dt) {
+            const testDate = new Date(sale.dt);
+            if (!isNaN(testDate.getTime())) return sale.dt;
+          }
+          if (sale.createdAt) {
+            const testDate = new Date(sale.createdAt);
+            if (!isNaN(testDate.getTime())) return sale.createdAt;
+          }
+          return new Date().toISOString(); // Use current date as fallback
+        })(),
         customer: sale.customer,
         amountType: sale.amountType,
         totalValue: sale.totalValue,
@@ -292,7 +313,7 @@ export default async function SalesPage() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
-                            {new Date(sale.date).toLocaleDateString("en-GB")}
+                            {new Date(sale.dt).toLocaleDateString("en-GB")}
                           </span>
                         </div>
                       </td>

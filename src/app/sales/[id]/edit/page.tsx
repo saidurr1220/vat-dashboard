@@ -91,7 +91,9 @@ export default function EditSalePage({
           const saleData = await saleRes.json();
           setSale(saleData);
           setFormData({
-            date: new Date(saleData.date).toISOString().split("T")[0],
+            date: new Date(saleData.dt || saleData.date)
+              .toISOString()
+              .split("T")[0],
             invoiceNo: saleData.invoiceNo,
             customer: saleData.customer,
             customerId: saleData.customerId || null,
@@ -269,11 +271,11 @@ export default function EditSalePage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50 flex items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg border p-8">
           <div className="flex items-center space-x-4">
             <svg
-              className="animate-spin h-8 w-8 text-orange-600"
+              className="animate-spin h-8 w-8 text-gray-600"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -308,9 +310,9 @@ export default function EditSalePage({
 
   if (!sale) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50 flex items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg border p-8 text-center">
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
               className="w-8 h-8 text-white"
               fill="none"
@@ -333,7 +335,7 @@ export default function EditSalePage({
           </p>
           <Link
             href="/sales"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+            className="inline-flex items-center px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
           >
             ← Back to Sales
           </Link>
@@ -343,14 +345,14 @@ export default function EditSalePage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
                   <svg
                     className="w-6 h-6 text-white"
                     fill="none"
@@ -366,23 +368,10 @@ export default function EditSalePage({
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold text-gray-900">
                     Edit Sale
                   </h1>
-                  <p className="text-gray-600 flex items-center gap-2">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
+                  <p className="text-gray-600">
                     Update sales invoice #{sale.invoiceNo}
                   </p>
                 </div>
@@ -390,7 +379,7 @@ export default function EditSalePage({
             </div>
             <Link
               href={`/sales/${sale.id}`}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+              className="inline-flex items-center px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -410,11 +399,11 @@ export default function EditSalePage({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Sale Header */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+          <div className="bg-white rounded-lg shadow-lg border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
                 <svg
                   className="w-5 h-5 text-white"
                   fill="none"
@@ -445,7 +434,7 @@ export default function EditSalePage({
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
                   }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                   required
                 />
               </div>
@@ -460,7 +449,7 @@ export default function EditSalePage({
                   onChange={(e) =>
                     setFormData({ ...formData, invoiceNo: e.target.value })
                   }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                   placeholder="Invoice number"
                   required
                 />
@@ -473,7 +462,7 @@ export default function EditSalePage({
                 <select
                   value={formData.customerId || ""}
                   onChange={(e) => handleCustomerChange(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                 >
                   <option value="">Select customer</option>
                   {customers.map((customer) => (
@@ -496,7 +485,7 @@ export default function EditSalePage({
                       amountType: e.target.value as "INCL" | "EXCL",
                     })
                   }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                 >
                   <option value="EXCL">VAT Exclusive</option>
                   <option value="INCL">VAT Inclusive</option>
@@ -512,7 +501,7 @@ export default function EditSalePage({
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 bg-white/50 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 resize-none"
                   placeholder="Additional notes"
                   rows={2}
                 />
@@ -521,9 +510,9 @@ export default function EditSalePage({
           </div>
 
           {/* Add Products */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+          <div className="bg-white rounded-lg shadow-lg border p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
                 <svg
                   className="w-5 h-5 text-white"
                   fill="none"
@@ -553,7 +542,7 @@ export default function EditSalePage({
                   onChange={(e) =>
                     setSelectedProductId(Number(e.target.value) || null)
                   }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                 >
                   <option value="">Select a product</option>
                   {products.map((product) => (
@@ -577,7 +566,7 @@ export default function EditSalePage({
                   step="0.01"
                   value={qty}
                   onChange={(e) => setQty(Number(e.target.value))}
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 bg-white/50"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
                   placeholder="Qty"
                 />
               </div>
@@ -586,7 +575,7 @@ export default function EditSalePage({
                 type="button"
                 onClick={addSaleLine}
                 disabled={!selectedProductId || qty <= 0}
-                className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none"
+                className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 Add Product
               </button>
@@ -595,11 +584,11 @@ export default function EditSalePage({
 
           {/* Sale Lines */}
           {saleLines.length > 0 && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-              <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+            <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
                       <svg
                         className="w-4 h-4 text-white"
                         fill="none"
@@ -618,9 +607,9 @@ export default function EditSalePage({
                       Sale Items
                     </h2>
                   </div>
-                  <div className="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200">
+                  <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200">
                     <svg
-                      className="w-4 h-4 inline mr-1 text-blue-600"
+                      className="w-4 h-4 inline mr-1 text-gray-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -639,24 +628,24 @@ export default function EditSalePage({
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <thead className="bg-gray-900 text-white">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                         Product
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                         Unit
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
                         Qty
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
                         Unit Price
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
                         Line Amount
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -665,7 +654,7 @@ export default function EditSalePage({
                     {saleLines.map((line, index) => (
                       <tr
                         key={index}
-                        className="hover:bg-orange-50/50 transition-colors duration-150"
+                        className="hover:bg-gray-50 transition-colors duration-150"
                       >
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {line.productName}
@@ -682,7 +671,7 @@ export default function EditSalePage({
                             onChange={(e) =>
                               updateSaleLineQty(index, Number(e.target.value))
                             }
-                            className="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                            className="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
@@ -699,7 +688,7 @@ export default function EditSalePage({
                                   Number(e.target.value)
                                 )
                               }
-                              className="w-24 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                              className="w-24 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
                             />
                           </div>
                         </td>
@@ -711,7 +700,7 @@ export default function EditSalePage({
                             <button
                               type="button"
                               onClick={() => removeSaleLine(index)}
-                              className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-xs font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200"
+                              className="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200"
                               title="Remove item"
                             >
                               <svg
@@ -737,16 +726,16 @@ export default function EditSalePage({
               </div>
 
               {/* Totals */}
-              <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 <div className="flex justify-end">
                   <div className="w-80 space-y-3">
                     <div className="flex justify-between text-sm font-medium">
                       <span>Line Total:</span>
                       <span>৳{subtotal.toLocaleString()}</span>
                     </div>
-                    <div className="text-xs text-gray-500 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                    <div className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
                       <svg
-                        className="w-4 h-4 inline mr-1 text-blue-600"
+                        className="w-4 h-4 inline mr-1 text-gray-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -771,14 +760,14 @@ export default function EditSalePage({
           <div className="flex flex-col sm:flex-row justify-end gap-4">
             <Link
               href={`/sales/${sale.id}`}
-              className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={submitting || saleLines.length === 0}
-              className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none"
+              className="inline-flex items-center justify-center px-8 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {submitting ? (
                 <>

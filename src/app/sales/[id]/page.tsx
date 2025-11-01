@@ -1,8 +1,8 @@
 import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import SaleActionsWrapper from "@/components/SaleActionsWrapper";
+import InvoiceActions from "@/components/InvoiceActions";
+import "./invoice-print.css";
 
 async function getSaleDetails(id: string) {
   try {
@@ -18,7 +18,7 @@ async function getSaleDetails(id: string) {
       SELECT 
         s.id,
         s.invoice_no as "invoiceNo",
-        s.dt as date,
+        s.dt,
         s.customer,
         s.amount_type as "amountType",
         s.total_value as "totalValue",
@@ -111,57 +111,60 @@ export default async function SaleDetailPage({
   const sale = saleData as any;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-red-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 print:p-0 print:m-0">
+        {/* Header - Hidden in print */}
+        <div className="mb-6 print:hidden">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Invoice Details
+              <h1 className="text-xl font-bold text-gray-900">
+                Invoice #{sale.invoiceNo}
               </h1>
-              <p className="text-gray-600 mt-1">Invoice #{sale.invoiceNo}</p>
             </div>
-            <SaleActionsWrapper sale={sale} />
+            <InvoiceActions saleId={sale.id} invoiceNo={sale.invoiceNo} />
           </div>
         </div>
 
-        {/* VAT 6.3 Standard Invoice - Original Copy */}
-        <div className="bg-white shadow-2xl border-2 border-gray-300 print:shadow-none print:border-gray-400 mb-8">
-          {/* VAT 6.3 Header */}
-          <div className="relative border-b-2 border-gray-400 p-6">
-            {/* মূসক-৬.৩ in upper right corner */}
-            <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 text-sm font-bold">
+        {/* Professional Tax Invoice - Clean Design */}
+        <div className="bg-white shadow-lg border border-gray-200 print:shadow-none print:border-0 print:m-0">
+          {/* Clean Professional Header */}
+          <div className="relative bg-gray-900 text-white p-6 print:bg-white print:text-black print:border-b-2 print:border-black">
+            {/* মূসক-৬.৩ badge */}
+            <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 text-xs font-bold print:bg-black print:text-white">
               মূসক-৬.৩
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-3xl font-bold mb-3 print:text-black">
                   TAX INVOICE
                 </h1>
-                <div className="text-lg font-semibold text-gray-700">
-                  <p>
-                    Invoice No:{" "}
-                    <span className="font-mono text-blue-600">
+                <div className="text-base space-y-2 print:text-black">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-300 print:text-gray-600 font-medium">
+                      Invoice No:
+                    </span>
+                    <span className="font-mono font-bold bg-gray-800 px-3 py-1 rounded print:bg-gray-100 print:text-black">
                       {sale.invoiceNo}
                     </span>
-                  </p>
-                  <p>
-                    Date:{" "}
-                    <span className="font-mono">
-                      {new Date(sale.date).toLocaleDateString("en-GB")}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-300 print:text-gray-600 font-medium">
+                      Date:
                     </span>
-                  </p>
+                    <span className="font-mono font-semibold print:text-black">
+                      {new Date(sale.dt).toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="bg-gray-100 p-4 border border-gray-300">
-                  <p className="text-sm font-semibold text-gray-600 mb-1">
+                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 print:bg-gray-100 print:border-black">
+                  <p className="text-sm font-bold mb-1 print:text-black">
                     ORIGINAL FOR BUYER
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-300 print:text-gray-600">
                     VAT Registration Certificate Required
                   </p>
                 </div>
@@ -169,528 +172,322 @@ export default async function SaleDetailPage({
             </div>
           </div>
 
-          {/* VAT 6.3 Seller and Buyer Information */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Clean Company & Customer Info */}
+          <div className="p-4 bg-gray-50 print:bg-white">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Seller Information */}
               {sale.companySettings && (
-                <div className="border-2 border-gray-300 p-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 bg-gray-100 p-2 border-b border-gray-300">
-                    SELLER / SUPPLIER
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <p className="font-bold text-base text-gray-900">
+                <div className="bg-white border border-gray-200 print:border-black">
+                  <div className="bg-gray-100 p-4 border-b border-gray-200 print:bg-gray-200 print:border-black">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                      SELLER / SUPPLIER
+                    </h3>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <h4 className="text-base font-bold text-gray-900">
                       {sale.companySettings.taxpayer_name}
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>Address:</strong> {sale.companySettings.address}
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>BIN:</strong>{" "}
-                      <span className="font-mono font-bold">
-                        {sale.companySettings.bin}
-                      </span>
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>VAT Registration:</strong>{" "}
-                      <span className="text-green-600 font-semibold">
-                        Active
-                      </span>
-                    </p>
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          Address:
+                        </span>
+                        <span className="ml-2 text-gray-800">
+                          {sale.companySettings.address}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          BIN:
+                        </span>
+                        <span className="ml-2 font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                          {sale.companySettings.bin}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          VAT Registration:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-semibold">
+                          Active
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Buyer Information */}
-              <div className="border-2 border-gray-300 p-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 bg-gray-100 p-2 border-b border-gray-300">
-                  BUYER / CUSTOMER
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <p className="font-bold text-base text-gray-900">
-                    {sale.customerName || sale.customer}
-                  </p>
-                  {sale.customerAddress && (
-                    <p className="text-gray-700">
-                      <strong>Address:</strong> {sale.customerAddress}
-                    </p>
-                  )}
-                  {sale.customerPhone && (
-                    <p className="text-gray-700">
-                      <strong>Phone:</strong> {sale.customerPhone}
-                    </p>
-                  )}
-                  {sale.customerBin ? (
-                    <p className="text-gray-700">
-                      <strong>BIN:</strong>{" "}
-                      <span className="font-mono font-bold">
-                        {sale.customerBin}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-gray-500 italic">BIN: Not Provided</p>
-                  )}
-                  {sale.customerNid && (
-                    <p className="text-gray-700">
-                      <strong>NID:</strong>{" "}
-                      <span className="font-mono">{sale.customerNid}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* VAT 6.3 Items Table */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <table className="w-full border-2 border-gray-400">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border border-gray-400 p-3 text-left font-bold text-sm">
-                    SL. NO.
-                  </th>
-                  <th className="border border-gray-400 p-3 text-left font-bold text-sm">
-                    DESCRIPTION OF GOODS/SERVICES
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center font-bold text-sm">
-                    HS CODE
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center font-bold text-sm">
-                    UNIT
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    QTY
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    UNIT PRICE (৳)
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    TOTAL VALUE (৳)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sale.saleLines.map((line: any, index: number) => (
-                  <tr key={index}>
-                    <td className="border border-gray-400 p-3 text-center font-mono">
-                      {(index + 1).toString().padStart(2, "0")}
-                    </td>
-                    <td className="border border-gray-400 p-3">
-                      <div className="font-semibold text-gray-900">
-                        {line.productName}
-                      </div>
-                    </td>
-                    <td className="border border-gray-400 p-3 text-center font-mono text-sm">
-                      {line.hsCode || "N/A"}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-center">
-                      {line.unit}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono">
-                      {Number(line.qty).toLocaleString()}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono">
-                      {Number(line.unitPrice).toLocaleString()}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono font-bold">
-                      {Number(line.lineTotal).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {/* Empty rows for standard format */}
-                {Array.from({
-                  length: Math.max(0, 5 - sale.saleLines.length),
-                }).map((_, index) => (
-                  <tr key={`empty-${index}`}>
-                    <td className="border border-gray-400 p-3 text-center">
-                      &nbsp;
-                    </td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* VAT 6.3 Totals Section */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-bold text-gray-900 mb-2">PAYMENT TERMS:</h4>
-                <p className="text-sm text-gray-700">Cash Payment</p>
-
-                {sale.notes && (
-                  <div className="mt-4">
-                    <h4 className="font-bold text-gray-900 mb-2">REMARKS:</h4>
-                    <p className="text-sm text-gray-700">{sale.notes}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <table className="w-full border-2 border-gray-400">
-                  <tbody>
-                    <tr>
-                      <td className="border border-gray-400 p-2 font-semibold bg-gray-100">
-                        TOTAL VALUE (EXCLUDING VAT):
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold">
-                        ৳ {Number(sale.netOfVat).toLocaleString()}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border border-gray-400 p-2 font-semibold bg-gray-100">
-                        VAT @ 15%:
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold">
-                        ৳ {Number(sale.vatAmount).toLocaleString()}
-                      </td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="border border-gray-400 p-2 font-bold text-lg">
-                        TOTAL VALUE (INCLUDING VAT):
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold text-lg">
-                        ৳ {Number(sale.grandTotal).toLocaleString()}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                <div className="mt-4 text-sm text-gray-700">
-                  <p>
-                    <strong>Amount in Words:</strong>
-                  </p>
-                  <p className="italic border border-gray-300 p-2 bg-gray-50">
-                    {/* You can add number to words conversion here */}
-                    Taka {Number(sale.grandTotal).toLocaleString()} Only
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* VAT 6.3 Signature Section */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">PREPARED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">CHECKED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">RECEIVED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 text-center border-t-2 border-gray-400 pt-4">
-              <p className="text-xs text-gray-600">
-                This is a computer generated invoice and does not require
-                physical signature.
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                For any queries, please contact:{" "}
-                {sale.companySettings?.taxpayer_name || "M S RAHMAN TRADERS"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Customer Copy */}
-        <div className="bg-white shadow-2xl border-2 border-gray-300 print:shadow-none print:border-gray-400 print:page-break-before">
-          {/* VAT 6.3 Header - Customer Copy */}
-          <div className="relative border-b-2 border-gray-400 p-6">
-            {/* মূসক-৬.৩ in upper right corner */}
-            <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 text-sm font-bold">
-              মূসক-৬.৩
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  TAX INVOICE
-                </h1>
-                <div className="text-lg font-semibold text-gray-700">
-                  <p>
-                    Invoice No:{" "}
-                    <span className="font-mono text-blue-600">
-                      {sale.invoiceNo}
-                    </span>
-                  </p>
-                  <p>
-                    Date:{" "}
-                    <span className="font-mono">
-                      {new Date(sale.date).toLocaleDateString("en-GB")}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="bg-blue-100 p-4 border border-blue-300">
-                  <p className="text-sm font-semibold text-blue-800 mb-1">
-                    DUPLICATE FOR SELLER
-                  </p>
-                  <p className="text-xs text-blue-600">Customer Copy</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Seller and Buyer Information - Customer Copy */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Seller Information */}
-              {sale.companySettings && (
-                <div className="border-2 border-gray-300 p-4">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 bg-gray-100 p-2 border-b border-gray-300">
-                    SELLER / SUPPLIER
+              <div className="bg-white border border-gray-200 print:border-black">
+                <div className="bg-gray-100 p-4 border-b border-gray-200 print:bg-gray-200 print:border-black">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    BUYER / CUSTOMER
                   </h3>
-                  <div className="space-y-2 text-sm">
-                    <p className="font-bold text-base text-gray-900">
-                      {sale.companySettings.taxpayer_name}
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>Address:</strong> {sale.companySettings.address}
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>BIN:</strong>{" "}
-                      <span className="font-mono font-bold">
-                        {sale.companySettings.bin}
-                      </span>
-                    </p>
-                    <p className="text-gray-700">
-                      <strong>VAT Registration:</strong>{" "}
-                      <span className="text-green-600 font-semibold">
-                        Active
-                      </span>
-                    </p>
-                  </div>
                 </div>
-              )}
-
-              {/* Buyer Information */}
-              <div className="border-2 border-gray-300 p-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 bg-gray-100 p-2 border-b border-gray-300">
-                  BUYER / CUSTOMER
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <p className="font-bold text-base text-gray-900">
+                <div className="p-3 space-y-2">
+                  <h4 className="text-base font-bold text-gray-900">
                     {sale.customerName || sale.customer}
-                  </p>
-                  {sale.customerAddress && (
-                    <p className="text-gray-700">
-                      <strong>Address:</strong> {sale.customerAddress}
-                    </p>
-                  )}
-                  {sale.customerPhone && (
-                    <p className="text-gray-700">
-                      <strong>Phone:</strong> {sale.customerPhone}
-                    </p>
-                  )}
-                  {sale.customerBin ? (
-                    <p className="text-gray-700">
-                      <strong>BIN:</strong>{" "}
-                      <span className="font-mono font-bold">
-                        {sale.customerBin}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-gray-500 italic">BIN: Not Provided</p>
-                  )}
-                  {sale.customerNid && (
-                    <p className="text-gray-700">
-                      <strong>NID:</strong>{" "}
-                      <span className="font-mono">{sale.customerNid}</span>
-                    </p>
-                  )}
+                  </h4>
+                  <div className="space-y-1 text-sm">
+                    {sale.customerAddress && (
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          Address:
+                        </span>
+                        <span className="ml-2 text-gray-800">
+                          {sale.customerAddress}
+                        </span>
+                      </div>
+                    )}
+                    {sale.customerPhone && (
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          Phone:
+                        </span>
+                        <span className="ml-2 font-mono text-gray-800">
+                          {sale.customerPhone}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-semibold text-gray-600">BIN:</span>
+                      {sale.customerBin ? (
+                        <span className="ml-2 font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                          {sale.customerBin}
+                        </span>
+                      ) : (
+                        <span className="ml-2 text-gray-500 italic">
+                          Not Provided
+                        </span>
+                      )}
+                    </div>
+                    {sale.customerNid && (
+                      <div>
+                        <span className="font-semibold text-gray-600">
+                          NID:
+                        </span>
+                        <span className="ml-2 font-mono text-gray-800">
+                          {sale.customerNid}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Items Table - Customer Copy */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <table className="w-full border-2 border-gray-400">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border border-gray-400 p-3 text-left font-bold text-sm">
-                    SL. NO.
-                  </th>
-                  <th className="border border-gray-400 p-3 text-left font-bold text-sm">
-                    DESCRIPTION OF GOODS/SERVICES
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center font-bold text-sm">
-                    HS CODE
-                  </th>
-                  <th className="border border-gray-400 p-3 text-center font-bold text-sm">
-                    UNIT
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    QTY
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    UNIT PRICE (৳)
-                  </th>
-                  <th className="border border-gray-400 p-3 text-right font-bold text-sm">
-                    TOTAL VALUE (৳)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sale.saleLines.map((line: any, index: number) => (
-                  <tr key={index}>
-                    <td className="border border-gray-400 p-3 text-center font-mono">
-                      {(index + 1).toString().padStart(2, "0")}
-                    </td>
-                    <td className="border border-gray-400 p-3">
-                      <div className="font-semibold text-gray-900">
-                        {line.productName}
-                      </div>
-                    </td>
-                    <td className="border border-gray-400 p-3 text-center font-mono text-sm">
-                      {line.hsCode || "N/A"}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-center">
-                      {line.unit}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono">
-                      {Number(line.qty).toLocaleString()}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono">
-                      {Number(line.unitPrice).toLocaleString()}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right font-mono font-bold">
-                      {Number(line.lineTotal).toLocaleString()}
-                    </td>
+          {/* Clean Items Table */}
+          <div className="p-4">
+            <div className="border border-gray-200 print:border-black">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-900 text-white print:bg-gray-200 print:text-black">
+                    <th className="p-2 text-left font-bold text-xs border-r border-gray-700 print:border-black">
+                      SL.
+                    </th>
+                    <th className="p-2 text-left font-bold text-xs border-r border-gray-700 print:border-black">
+                      DESCRIPTION OF GOODS/SERVICES
+                    </th>
+                    <th className="p-2 text-center font-bold text-xs border-r border-gray-700 print:border-black">
+                      HS CODE
+                    </th>
+                    <th className="p-2 text-center font-bold text-xs border-r border-gray-700 print:border-black">
+                      UNIT
+                    </th>
+                    <th className="p-2 text-right font-bold text-xs border-r border-gray-700 print:border-black">
+                      QTY
+                    </th>
+                    <th className="p-2 text-right font-bold text-xs border-r border-gray-700 print:border-black">
+                      UNIT PRICE (৳)
+                    </th>
+                    <th className="p-2 text-right font-bold text-xs">
+                      TOTAL VALUE (৳)
+                    </th>
                   </tr>
-                ))}
-                {/* Empty rows for standard format */}
-                {Array.from({
-                  length: Math.max(0, 5 - sale.saleLines.length),
-                }).map((_, index) => (
-                  <tr key={`empty-${index}`}>
-                    <td className="border border-gray-400 p-3 text-center">
-                      &nbsp;
-                    </td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                    <td className="border border-gray-400 p-3">&nbsp;</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sale.saleLines.map((line: any, index: number) => (
+                    <tr
+                      key={index}
+                      className={`${
+                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                      } border-b border-gray-200 print:border-black`}
+                    >
+                      <td className="p-2 text-center font-mono font-semibold border-r border-gray-200 print:border-black text-xs">
+                        {(index + 1).toString().padStart(2, "0")}
+                      </td>
+                      <td className="p-2 border-r border-gray-200 print:border-black">
+                        <div className="font-semibold text-gray-900 text-xs">
+                          {line.productName}
+                        </div>
+                      </td>
+                      <td className="p-2 text-center font-mono border-r border-gray-200 print:border-black text-gray-600 text-xs">
+                        {line.hsCode || "—"}
+                      </td>
+                      <td className="p-2 text-center font-semibold border-r border-gray-200 print:border-black">
+                        <span className="bg-gray-100 px-1 py-1 rounded text-xs">
+                          {line.unit}
+                        </span>
+                      </td>
+                      <td className="p-2 text-right font-mono font-semibold border-r border-gray-200 print:border-black text-xs">
+                        {Number(line.qty).toLocaleString()}
+                      </td>
+                      <td className="p-2 text-right font-mono font-semibold border-r border-gray-200 print:border-black text-xs">
+                        {Number(line.unitPrice).toLocaleString()}
+                      </td>
+                      <td className="p-2 text-right font-mono font-bold text-gray-900 text-sm">
+                        {Number(line.lineTotal).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Empty rows for standard format */}
+                  {Array.from({
+                    length: Math.max(0, 2 - sale.saleLines.length),
+                  }).map((_, index) => (
+                    <tr
+                      key={`empty-${index}`}
+                      className="border-b border-gray-200 print:border-black h-12"
+                    >
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3 border-r border-gray-200 print:border-black">
+                        &nbsp;
+                      </td>
+                      <td className="p-3">&nbsp;</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Totals Section - Customer Copy */}
-          <div className="border-b-2 border-gray-400 p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-bold text-gray-900 mb-2">PAYMENT TERMS:</h4>
-                <p className="text-sm text-gray-700">Cash Payment</p>
+          {/* Clean Totals & Payment Section */}
+          <div className="p-4 bg-gray-50 print:bg-white">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Payment Terms & Notes */}
+              <div className="space-y-4">
+                <div className="bg-white border border-gray-200 print:border-black">
+                  <div className="bg-gray-100 p-3 border-b border-gray-200 print:bg-gray-200 print:border-black">
+                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">
+                      PAYMENT TERMS
+                    </h4>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-gray-700 font-medium">Cash Payment</p>
+                  </div>
+                </div>
 
                 {sale.notes && (
-                  <div className="mt-4">
-                    <h4 className="font-bold text-gray-900 mb-2">REMARKS:</h4>
-                    <p className="text-sm text-gray-700">{sale.notes}</p>
+                  <div className="bg-white border border-gray-200 print:border-black">
+                    <div className="bg-gray-100 p-3 border-b border-gray-200 print:bg-gray-200 print:border-black">
+                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">
+                        REMARKS
+                      </h4>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-gray-700 italic">{sale.notes}</p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div>
-                <table className="w-full border-2 border-gray-400">
-                  <tbody>
-                    <tr>
-                      <td className="border border-gray-400 p-2 font-semibold bg-gray-100">
-                        TOTAL VALUE (EXCLUDING VAT):
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold">
-                        ৳ {Number(sale.netOfVat).toLocaleString()}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border border-gray-400 p-2 font-semibold bg-gray-100">
-                        VAT @ 15%:
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold">
-                        ৳ {Number(sale.vatAmount).toLocaleString()}
-                      </td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="border border-gray-400 p-2 font-bold text-lg">
-                        TOTAL VALUE (INCLUDING VAT):
-                      </td>
-                      <td className="border border-gray-400 p-2 text-right font-mono font-bold text-lg">
-                        ৳ {Number(sale.grandTotal).toLocaleString()}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* Clean Totals */}
+              <div className="space-y-4">
+                <div className="bg-white border border-gray-200 print:border-black">
+                  <div className="bg-gray-900 text-white p-3 print:bg-gray-200 print:text-black print:border-b print:border-black">
+                    <h4 className="font-bold text-sm uppercase tracking-wide">
+                      INVOICE SUMMARY
+                    </h4>
+                  </div>
 
-                <div className="mt-4 text-sm text-gray-700">
-                  <p>
-                    <strong>Amount in Words:</strong>
-                  </p>
-                  <p className="italic border border-gray-300 p-2 bg-gray-50">
-                    Taka {Number(sale.grandTotal).toLocaleString()} Only
-                  </p>
+                  <div className="divide-y divide-gray-200 print:divide-black">
+                    <div className="p-4 flex justify-between items-center">
+                      <span className="font-semibold text-gray-700">
+                        Total Value (Excluding VAT):
+                      </span>
+                      <span className="font-mono font-bold text-gray-900">
+                        ৳ {Number(sale.netOfVat).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="p-4 flex justify-between items-center bg-gray-50 print:bg-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        VAT @ 15%:
+                      </span>
+                      <span className="font-mono font-bold text-gray-900">
+                        ৳ {Number(sale.vatAmount).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-gray-100 print:bg-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-lg text-gray-900">
+                          GRAND TOTAL (Inc. VAT):
+                        </span>
+                        <span className="font-mono font-bold text-xl text-gray-900">
+                          ৳ {Number(sale.grandTotal).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Amount in Words */}
+                <div className="bg-white border border-gray-200 print:border-black">
+                  <div className="bg-gray-100 p-3 border-b border-gray-200 print:bg-gray-200 print:border-black">
+                    <h5 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                      Amount in Words
+                    </h5>
+                  </div>
+                  <div className="p-4">
+                    <p className="font-semibold text-gray-800 capitalize">
+                      Taka {Number(sale.grandTotal).toLocaleString()} Only
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Signature Section - Customer Copy */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">PREPARED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
+          {/* Compact Signature Section */}
+          <div className="p-3 bg-white border-t border-gray-200 print:border-black">
+            {/* Single Line Signatures */}
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              {[
+                { title: "PREPARED BY", subtitle: "Accounts" },
+                { title: "CHECKED BY", subtitle: "Manager" },
+                { title: "RECEIVED BY", subtitle: "Customer" },
+              ].map((sig, index) => (
+                <div key={index} className="text-center">
+                  <div className="h-6 border-b border-gray-300 mb-1 print:border-black"></div>
+                  <p className="font-bold text-xs text-gray-900 uppercase">
+                    {sig.title}
+                  </p>
+                  <p className="text-xs text-gray-600">{sig.subtitle}</p>
                 </div>
-              </div>
-
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">CHECKED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 mt-16 pt-2">
-                  <p className="font-semibold text-sm">RECEIVED BY</p>
-                  <p className="text-xs text-gray-600 mt-1">Signature & Date</p>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="mt-8 text-center border-t-2 border-gray-400 pt-4">
+            {/* Compact Footer */}
+            <div className="text-center border-t border-gray-200 pt-2 print:border-black">
               <p className="text-xs text-gray-600">
-                This is a computer generated invoice and does not require
-                physical signature.
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                For any queries, please contact:{" "}
+                Computer generated invoice - No signature required | Generated:{" "}
+                {new Date().toLocaleDateString("en-GB")} |{" "}
                 {sale.companySettings?.taxpayer_name || "M S RAHMAN TRADERS"}
               </p>
             </div>

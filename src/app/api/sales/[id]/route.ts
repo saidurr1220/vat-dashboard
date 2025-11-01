@@ -16,7 +16,7 @@ export async function GET(
       SELECT 
         s.id,
         s.invoice_no as "invoiceNo",
-        s.dt as date,
+        s.dt,
         s.customer,
         s.amount_type as "amountType",
         s.total_value as "totalValue",

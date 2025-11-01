@@ -6,7 +6,7 @@ interface SaleActionsWrapperProps {
   sale: {
     id: number;
     invoiceNo: string;
-    date: string;
+    dt: string;
     customer: string;
     customerName?: string;
     customerAddress?: string;
