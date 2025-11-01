@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Printer, Edit, Trash2, FileText, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SaleActionsProps {
@@ -194,6 +196,13 @@ export default function SaleActions({ sale }: SaleActionsProps) {
         </svg>
         Print Formatted
       </button>
+
+      <Link href={`/sales/${sale.id}/invoice`}>
+        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 gap-2">
+          <Sparkles className="w-4 h-4" />
+          Enhanced Invoice
+        </Button>
+      </Link>
       <Link
         href={`/sales/${sale.id}/edit`}
         className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
