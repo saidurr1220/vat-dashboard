@@ -12,14 +12,15 @@ const getDatabaseUrl = () => {
 // Enhanced Neon-optimized connection pool configuration
 const pool = new Pool({
     connectionString: getDatabaseUrl(),
-    // Optimized settings for better performance
-    max: 3, // Smaller pool for Neon's connection limits
+    // Optimized settings for Vercel/Neon deployment
+    max: process.env.NODE_ENV === 'production' ? 1 : 3, // Single connection for serverless
     min: 0, // Allow pool to scale to zero
-    idleTimeoutMillis: 5000, // Shorter idle timeout for faster cleanup
-    connectionTimeoutMillis: 8000, // Timeout for acquiring connections
-    // SSL is required for Neon
-    ssl: getDatabaseUrl().includes('neon.tech') ? { rejectUnauthorized: false } :
-        process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    idleTimeoutMillis: process.env.NODE_ENV === 'production' ? 1000 : 5000,
+    connectionTimeoutMillis: 10000, // Longer timeout for cold starts
+    // SSL configuration for Neon
+    ssl: getDatabaseUrl().includes('neon.tech') || process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
 });
 
 // Handle pool errors
