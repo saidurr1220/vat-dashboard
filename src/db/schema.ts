@@ -31,6 +31,7 @@ export const products = pgTable("products", {
     testsPerKit: integer("tests_per_kit"), // for BioShield products
     costExVat: numeric("cost_ex_vat"),
     sellExVat: numeric("sell_ex_vat"),
+    stockOnHand: numeric("stock_on_hand").default("0").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow()
 }, (table) => ({

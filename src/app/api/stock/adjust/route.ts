@@ -43,65 +43,35 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // For stock out adjustments, check if there's enough stock (with error handling)
+        // For stock out adjustments, check if there's enough stock
         if (adjustmentType === 'OUT') {
-            try {
-                const currentStock = await db.execute(sql`
-                    SELECT 
-                      COALESCE(SUM(sl.qty_in::numeric) - SUM(sl.qty_out::numeric), 0) as current_stock
-                    FROM stock_ledger sl 
-                    WHERE sl.product_id = ${productId}
-                `);
+            const currentStock = await db.execute(sql`
+                SELECT COALESCE(stock_on_hand::numeric, 0) as current_stock
+                FROM products 
+                WHERE id = ${productId}
+            `);
 
-                const stockOnHand = Number(currentStock.rows[0]?.current_stock || 0);
+            const stockOnHand = Number(currentStock.rows[0]?.current_stock || 0);
 
-                if (stockOnHand < quantity) {
-                    return NextResponse.json(
-                        { error: `Insufficient stock. Current stock: ${stockOnHand}` },
-                        { status: 400 }
-                    );
-                }
-            } catch (error) {
-                console.log('Stock ledger check failed, allowing adjustment:', error.message);
-                // If stock_ledger doesn't exist, allow the adjustment
+            if (stockOnHand < quantity) {
+                return NextResponse.json(
+                    { error: `Insufficient stock. Current stock: ${stockOnHand}` },
+                    { status: 400 }
+                );
             }
         }
 
-        // Create stock adjustment entry (with error handling)
-        let newStockLevel = 0;
+        // Update stock_on_hand directly in products table
+        const stockChange = adjustmentType === 'IN' ? quantity : -quantity;
 
-        try {
-            const adjustmentEntry = {
-                dt: new Date(),
-                productId: productId,
-                refType: 'ADJUST' as const,
-                refNo: `ADJ-${reason}-${Date.now()}`,
-                qtyIn: adjustmentType === 'IN' ? quantity : 0,
-                qtyOut: adjustmentType === 'OUT' ? quantity : 0,
-                unitCostExVat: 0, // Adjustments don't have cost
-            };
+        const updatedProduct = await db.execute(sql`
+            UPDATE products 
+            SET stock_on_hand = GREATEST(0, COALESCE(stock_on_hand::numeric, 0) + ${stockChange})
+            WHERE id = ${productId}
+            RETURNING stock_on_hand
+        `);
 
-            // Insert the adjustment using raw SQL
-            await db.execute(sql`
-                INSERT INTO stock_ledger (dt, product_id, ref_type, ref_no, qty_in, qty_out, unit_cost_ex_vat)
-                VALUES (${adjustmentEntry.dt}, ${adjustmentEntry.productId}, ${adjustmentEntry.refType}, 
-                        ${adjustmentEntry.refNo}, ${adjustmentEntry.qtyIn}, ${adjustmentEntry.qtyOut}, ${adjustmentEntry.unitCostExVat})
-            `);
-
-            // Get updated stock level
-            const updatedStock = await db.execute(sql`
-                SELECT 
-                    COALESCE(SUM(sl.qty_in::numeric) - SUM(sl.qty_out::numeric), 0) as new_stock
-                FROM stock_ledger sl 
-                WHERE sl.product_id = ${productId}
-            `);
-
-            newStockLevel = Number(updatedStock.rows[0]?.new_stock || 0);
-        } catch (error) {
-            console.log('Stock ledger adjustment failed, using fallback:', error.message);
-            // If stock_ledger doesn't exist, just return a success message
-            newStockLevel = adjustmentType === 'IN' ? quantity : -quantity;
-        }
+        const newStockLevel = Number(updatedProduct.rows[0]?.stock_on_hand || 0);
 
         return NextResponse.json({
             success: true,

@@ -116,19 +116,31 @@ export async function PUT(
             grandTotal = subtotal;
         }
 
-        // Update the sale in a transaction (simplified without stock operations)
+        // Update the sale in a transaction with proper stock management
         const result = await db.transaction(async (tx) => {
-            // Check if sale exists
-            const existingSale = await tx.execute(sql`
-                SELECT id FROM sales WHERE id = ${saleId}
+            // Check if sale exists and get current sale lines for stock restoration
+            const existingSaleLines = await tx.execute(sql`
+                SELECT sl.product_id, sl.qty, p.category
+                FROM sales_lines sl
+                JOIN products p ON sl.product_id = p.id
+                WHERE sl.sale_id = ${saleId}
             `);
 
-            if (existingSale.rows.length === 0) {
+            if (existingSaleLines.rows.length === 0) {
                 throw new Error('Sale not found');
             }
 
-            // Note: Stock operations temporarily disabled due to schema issues
-            // TODO: Implement proper stock management later
+            // First, restore stock from the original sale lines
+            for (const line of existingSaleLines.rows) {
+                const productId = line.product_id;
+                const qty = Number(line.qty);
+
+                await tx.execute(sql`
+                    UPDATE products 
+                    SET stock_on_hand = COALESCE(stock_on_hand::numeric, 0) + ${qty}
+                    WHERE id = ${productId}
+                `);
+            }
 
             // Update the sale record
             const updatedSale = await tx.execute(sql`
@@ -136,7 +148,7 @@ export async function PUT(
                   dt = ${new Date(date)},
                   invoice_no = ${invoiceNo},
                   customer = ${customer},
-                  customer_id = ${customerId},
+                  customer_id = ${customerId || null},
                   amount_type = ${amountType},
                   total_value = ${grandTotal.toString()},
                   notes = ${notes || null}
@@ -153,16 +165,20 @@ export async function PUT(
                 DELETE FROM sales_lines WHERE sale_id = ${saleId}
             `);
 
-            // Insert updated sale lines
+            // Insert updated sale lines and deduct new stock
             for (const line of lines) {
                 await tx.execute(sql`
                     INSERT INTO sales_lines (sale_id, product_id, unit, qty, unit_price_value, amount_type, line_total_calc)
                     VALUES (${saleId}, ${line.productId}, ${line.unit}, ${line.qty}, ${line.unitPrice}, ${amountType}, ${line.lineAmount})
                 `);
-            }
 
-            // Note: Stock deduction temporarily disabled due to schema issues
-            // TODO: Implement proper stock management later
+                // Deduct stock for the new quantities
+                await tx.execute(sql`
+                    UPDATE products 
+                    SET stock_on_hand = GREATEST(0, COALESCE(stock_on_hand::numeric, 0) - ${line.qty})
+                    WHERE id = ${line.productId}
+                `);
+            }
 
             return updatedSale.rows[0];
         });
@@ -202,11 +218,19 @@ export async function DELETE(
 
             const invoiceNo = saleDetails.rows[0].invoice_no;
 
-            // Note: Stock restoration temporarily disabled due to schema issues
-            // In a production system, this would restore stock quantities
-            console.log(`Would restore stock for ${saleDetails.rows.length} products from sale ${invoiceNo}`);
+            // Restore stock by updating stock_on_hand directly
+            for (const saleDetail of saleDetails.rows) {
+                const productId = saleDetail.product_id;
+                const qty = Number(saleDetail.qty);
 
-            // TODO: Implement proper stock restoration when stock_ledger table is available
+                await tx.execute(sql`
+                    UPDATE products 
+                    SET stock_on_hand = COALESCE(stock_on_hand::numeric, 0) + ${qty}
+                    WHERE id = ${productId}
+                `);
+            }
+
+            console.log(`Stock restored for ${saleDetails.rows.length} products from sale ${invoiceNo}`);
 
             // Delete sale lines first (foreign key constraint)
             await tx.execute(sql`
@@ -225,7 +249,7 @@ export async function DELETE(
             return deletedSale.rows[0];
         });
 
-        return NextResponse.json({ success: true, message: 'Sale deleted successfully (stock restoration disabled)' });
+        return NextResponse.json({ success: true, message: 'Sale deleted and stock restored successfully' });
     } catch (error) {
         console.error('Error deleting sale:', error);
         return NextResponse.json(

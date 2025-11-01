@@ -23,7 +23,7 @@ async function getProductDetails(id: string) {
         p.sell_ex_vat as "sellExVat",
         p.created_at as "createdAt",
         p.updated_at as "updatedAt",
-        COALESCE(SUM(sl.qty_in::numeric) - SUM(sl.qty_out::numeric), 0) as "stockOnHand",
+        COALESCE(p.stock_on_hand::numeric, 0) as "stockOnHand",
         COALESCE((
           SELECT 
             CASE 
@@ -35,9 +35,7 @@ async function getProductDetails(id: string) {
           WHERE sl2.product_id = p.id AND sl2.qty_in > 0
         ), p.cost_ex_vat::numeric) as "avgCostExVat"
       FROM products p
-      LEFT JOIN stock_ledger sl ON p.id = sl.product_id
       WHERE p.id = ${productId}
-      GROUP BY p.id, p.sku, p.name, p.hs_code, p.category, p.unit, p.tests_per_kit, p.cost_ex_vat, p.sell_ex_vat, p.created_at, p.updated_at
     `);
 
     if (result.rows.length === 0) {
