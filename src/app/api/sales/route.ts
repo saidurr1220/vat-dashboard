@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { sales, salesLines, customers, stockLedger } from '@/db/schema';
 import { eq, sql, desc } from 'drizzle-orm';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest) => {
     try {
         const body = await request.json();
 
@@ -164,9 +165,11 @@ export async function POST(request: NextRequest) {
                     dt: new Date(date),
                     invoiceNo,
                     customer,
+                    customerId: finalCustomerId,
                     amountType,
                     totalValue: finalGrandTotal.toString(),
                     notes: isMonthlyBulk ? `${notes || 'Monthly bulk cash sales'} - Bulk Invoice` : (notes || null),
+                    createdBy: (request as any).user?.uid || null,
                 })
                 .returning({ id: sales.id });
 
@@ -214,7 +217,7 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});
 
 export async function PUT(request: NextRequest) {
     try {

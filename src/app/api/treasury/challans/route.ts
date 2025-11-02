@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { treasuryChallans } from '@/db/schema';
 import { desc } from 'drizzle-orm';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET() {
     try {
@@ -20,7 +21,7 @@ export async function GET() {
     }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest) => {
     try {
         const {
             tokenNo,
@@ -62,4 +63,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

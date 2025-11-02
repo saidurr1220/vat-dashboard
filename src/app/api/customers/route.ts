@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { customers } from '@/db/schema';
 import { eq, ilike, or } from 'drizzle-orm';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest) => {
     try {
         const { name, address, phone, bin, nid } = await request.json();
 
@@ -69,4 +70,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

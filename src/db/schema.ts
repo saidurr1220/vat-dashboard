@@ -5,6 +5,7 @@ export const amountTypeEnum = pgEnum("amount_type", ["INCL", "EXCL"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["CASH", "BANK", "CARD", "MOBILE"]);
 export const refTypeEnum = pgEnum("ref_type", ["OPENING", "IMPORT", "SALE", "ADJUST"]);
 export const categoryEnum = pgEnum("category", ["Footwear", "Fan", "BioShield", "Instrument", "Appliance Parts", "Reagent"]);
+export const roleEnum = pgEnum("role", ["ADMIN", "USER"]);
 
 // Settings table (singleton)
 export const settings = pgTable("settings", {
@@ -90,6 +91,7 @@ export const sales = pgTable("sales", {
     dt: timestamp("dt").notNull(),
     customer: text("customer").notNull(),
     customerId: integer("customer_id").references(() => customers.id),
+    createdBy: integer("created_by").references(() => users.id),
     totalValue: numeric("total_value").notNull(),
     amountType: amountTypeEnum("amount_type").notNull(),
     notes: text("notes"),
@@ -203,4 +205,32 @@ export const priceMemory = pgTable("price_memory", {
 }, (table) => ({
     productIdUnique: unique("price_memory_product_id_unique").on(table.productId),
     lastUsedIdx: index("price_memory_last_used_idx").on(table.lastUsed)
+}));
+
+// Users table for authentication
+export const users = pgTable("users", {
+    id: serial("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    role: roleEnum("role").notNull().default("ADMIN"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => ({
+    emailIdx: index("users_email_idx").on(table.email)
+}));
+
+// Audit logs table
+export const auditLogs = pgTable("audit_logs", {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull().references(() => users.id),
+    action: text("action").notNull(),
+    resource: text("resource").notNull(),
+    meta: jsonb("meta"),
+    ip: text("ip"),
+    ua: text("ua"),
+    createdAt: timestamp("created_at").defaultNow()
+}, (table) => ({
+    userIdIdx: index("audit_logs_user_id_idx").on(table.userId),
+    createdAtIdx: index("audit_logs_created_at_idx").on(table.createdAt)
 }));

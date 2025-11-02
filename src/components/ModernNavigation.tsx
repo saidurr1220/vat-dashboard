@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { logout } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ import {
   Calendar,
   Calculator,
   Wallet,
+  LogOut,
+  User,
 } from "lucide-react";
 
 const navigation = [
@@ -45,9 +48,28 @@ export default function ModernNavigation() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+
+    // Check if user is logged in
+    async function checkAuth() {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.log("Not authenticated");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    checkAuth();
   }, []);
 
   return (
@@ -145,8 +167,49 @@ export default function ModernNavigation() {
 
           <Separator />
 
-          {/* Footer */}
+          {/* User Section & Footer */}
           <div className="px-6 py-4 space-y-3">
+            {/* User Info & Logout */}
+            {user && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 p-2 bg-accent/50 rounded-lg">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">
+                      {user.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{user.role}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={logout}
+                  className="w-full justify-start text-xs"
+                >
+                  <LogOut className="h-3 w-3 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            )}
+
+            {!user && !isLoading && (
+              <div className="space-y-2">
+                <Link href="/admin/login">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full text-xs"
+                  >
+                    <User className="h-3 w-3 mr-2" />
+                    Login
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            <Separator />
+
             <div className="flex items-center justify-between">
               <Badge variant="secondary" className="text-xs">
                 Oct 2025

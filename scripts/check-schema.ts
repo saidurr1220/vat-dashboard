@@ -1,44 +1,59 @@
-import { Pool } from "pg";
-import * as dotenv from "dotenv";
-
-dotenv.config();
+import 'dotenv/config';
+import { db } from '../src/db/client';
+import { sql } from 'drizzle-orm';
 
 async function checkSchema() {
-    console.log("🔍 Checking actual database schema...");
-
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
     try {
-        // Check sales table structure
-        const salesColumns = await pool.query(`
-            SELECT column_name, data_type, is_nullable 
-            FROM information_schema.columns 
-            WHERE table_name = 'sales' 
-            ORDER BY ordinal_position
-        `);
+        console.log('Checking database schema...\n');
 
-        console.log("📋 Sales table columns:");
-        salesColumns.rows.forEach(row => {
-            console.log(`  - ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);
+        // Check if auth tables exist
+        const authTables = await db.execute(sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('users', 'audit_logs')
+      ORDER BY table_name;
+    `);
+
+        console.log('Auth tables:', authTables.rows);
+
+        // Check sales table columns
+        const salesColumns = await db.execute(sql`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'sales'
+      ORDER BY ordinal_position;
+    `);
+
+        console.log('\nSales table columns:');
+        salesColumns.rows.forEach(col => {
+            console.log(`- ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`);
         });
 
-        // Check customers table structure
-        const customersColumns = await pool.query(`
-            SELECT column_name, data_type, is_nullable 
-            FROM information_schema.columns 
-            WHERE table_name = 'customers' 
-            ORDER BY ordinal_position
-        `);
+        // Check if role enum exists
+        const roleEnum = await db.execute(sql`
+      SELECT enumlabel 
+      FROM pg_enum 
+      WHERE enumtypid = (
+        SELECT oid FROM pg_type WHERE typname = 'role'
+      );
+    `);
 
-        console.log("\n📋 Customers table columns:");
-        customersColumns.rows.forEach(row => {
-            console.log(`  - ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);
-        });
+        console.log('\nRole enum values:', roleEnum.rows);
+
+        // Test a simple sales query
+        console.log('\nTesting sales query...');
+        const salesTest = await db.execute(sql`
+      SELECT id, invoice_no, dt, customer, total_value, created_by
+      FROM sales 
+      LIMIT 1;
+    `);
+
+        console.log('Sales query successful:', salesTest.rows.length > 0 ? 'Yes' : 'No data');
 
     } catch (error) {
-        console.error("❌ Schema check failed:", error);
-    } finally {
-        await pool.end();
+        console.error('Schema check failed:', error);
     }
 }
 
