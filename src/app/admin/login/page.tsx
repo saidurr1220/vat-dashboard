@@ -65,6 +65,9 @@ export default function AdminLogin() {
       const data = await response.json();
 
       if (response.ok) {
+        // Fire custom event to update navigation
+        window.dispatchEvent(new Event("authStateChanged"));
+
         // Redirect to original page or dashboard
         router.push(redirectTo);
         router.refresh();
@@ -207,21 +210,6 @@ export default function AdminLogin() {
                 )}
               </Button>
             </form>
-
-            {/* Demo Credentials */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                Demo Credentials:
-              </h4>
-              <div className="space-y-1 text-xs text-gray-600">
-                <p>
-                  <strong>Email:</strong> saidurr1256@gmail.com
-                </p>
-                <p>
-                  <strong>Password:</strong> Rahman2155
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

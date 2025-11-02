@@ -76,10 +76,13 @@ export async function makeAuthenticatedRequest(
 export function logout() {
     fetch('/api/auth/logout', { method: 'POST' })
         .then(() => {
+            // Fire custom event to update navigation
+            window.dispatchEvent(new Event('authStateChanged'));
             window.location.href = '/admin/login';
         })
         .catch(() => {
             // Even if logout fails, redirect to login
+            window.dispatchEvent(new Event('authStateChanged'));
             window.location.href = '/admin/login';
         });
 }

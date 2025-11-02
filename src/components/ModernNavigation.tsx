@@ -61,16 +61,55 @@ export default function ModernNavigation() {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
+        } else {
+          setUser(null);
         }
       } catch (error) {
         console.log("Not authenticated");
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     }
 
     checkAuth();
+
+    // Listen for auth changes (when user logs in/out)
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+
+    // Listen for storage events (when auth state changes in other tabs)
+    window.addEventListener("storage", handleAuthChange);
+
+    // Custom event for auth state changes
+    window.addEventListener("authStateChanged", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("authStateChanged", handleAuthChange);
+    };
   }, []);
+
+  // Re-check auth when pathname changes (after login redirect)
+  useEffect(() => {
+    if (mounted) {
+      async function recheckAuth() {
+        try {
+          const response = await fetch("/api/auth/me");
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          setUser(null);
+        }
+      }
+      recheckAuth();
+    }
+  }, [pathname, mounted]);
 
   return (
     <>
