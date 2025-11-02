@@ -243,40 +243,140 @@ export default function ImportsUploadPage() {
                 CSV Format Requirements
               </h2>
             </div>
-            <a
-              href="/sample-boe-import.csv"
-              download
-              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download Sample CSV
-            </a>
+            <div className="flex gap-2 flex-wrap">
+              <a
+                href="/sample-boe-import.csv"
+                download
+                className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Standard Format
+              </a>
+              <a
+                href="/enhanced-boe-import.csv"
+                download
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Simple BoE Format ⭐
+              </a>
+              <a
+                href="/test-bd-customs.csv"
+                download
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Advanced Format
+              </a>
+            </div>
           </div>
 
           <div className="space-y-6">
             <div>
               <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Required Columns:
+                CSV Format Options:
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <code className="text-sm text-gray-800 break-all">
-                  boe_no, boe_date, office_code, item_no, hs_code, description,
-                  assessable_value, base_vat, sd, vat, at, qty, unit
-                </code>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Option 1: Standard Format (Manual VAT/AT)
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <code className="text-sm text-gray-800 break-all">
+                      boe_no, boe_date, office_code, item_no, hs_code,
+                      description, assessable_value, base_vat, sd, vat, at, qty,
+                      unit
+                    </code>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-green-700 mb-2">
+                    Option 2: Simple BoE Format (Base + SD) - Recommended ✨
+                  </h4>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <code className="text-sm text-green-800 break-all">
+                      boe_date, boe_no, item_no, description, hs_code,
+                      base_value, sd_value, unit, qty, purchase_category, month
+                    </code>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    ✨ Simple calculation: AT = Base × 5%, VAT = Base × 15%
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Option 3: Advanced Format (Bangladesh Customs
+                    Auto-Calculation)
+                  </h4>
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <code className="text-sm text-blue-800 break-all">
+                      boe_date, boe_no, item_no, description, hs_code,
+                      assessable_value, cd_rate, rd_rate, sd_rate, vat_rate,
+                      ait_rate, at_rate, unit, qty
+                    </code>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">
+                    ✨ Full Bangladesh customs calculation: CD, RD, SD, VAT,
+                    AIT, AT automatically calculated
+                  </p>
+                </div>
               </div>
             </div>
 
             <div>
               <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Example Row:
+                Example Rows:
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 overflow-x-auto">
-                <code className="text-sm text-gray-800 whitespace-nowrap">
-                  BOE123456, 2025-10-15, DHK001, 1, 6403.99.00, Footwear, 50000,
-                  7500, 0, 8625, 0, 100, Pair
-                </code>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-xs font-medium text-gray-600 mb-1">
+                    Standard Format:
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-x-auto">
+                    <code className="text-xs text-gray-800 whitespace-nowrap">
+                      BOE123456, 2025-10-15, DHK001, 1, 6403.99.00, Footwear,
+                      50000, 7500, 0, 8625, 0, 100, Pair
+                    </code>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium text-green-600 mb-1">
+                    Simple BoE Format (Recommended):
+                  </h4>
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-200 overflow-x-auto">
+                    <code className="text-xs text-green-800 whitespace-nowrap">
+                      2025-10-15, BOE123456, 1, Footwear - Sports Shoes,
+                      6403.99.00, 50000, 15000, Pair, 100, Footwear, October
+                    </code>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    → Will calculate: AT: 2,500 (Base×5%), VAT: 7,500
+                    (Base×15%), Assessable: 65,000 (Base+SD)
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-medium text-blue-600 mb-1">
+                    Advanced Format (Bangladesh Customs):
+                  </h4>
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 overflow-x-auto">
+                    <code className="text-xs text-blue-800 whitespace-nowrap">
+                      2025-10-15, BOE123456, 1, Footwear - Sports Shoes,
+                      6403.99.00, 2504457.96, 25, 3, 45, 15, 5, 0, Pair, 100
+                    </code>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    → Will calculate: CD: 626,114 (25%), RD: 75,134 (3%), SD:
+                    1,442,568 (45%), VAT: 683,833 (15%), AIT: 125,223 (5%)
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -307,7 +407,17 @@ export default function ImportsUploadPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-orange-500 mt-1">•</span>
-                    <span>Duplicate BoE numbers will be skipped</span>
+                    <span>
+                      Same BoE number can have multiple items (1-4 items per
+                      BoE)
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 mt-1">•</span>
+                    <span>
+                      Duplicate BoE number + item number combinations will be
+                      skipped
+                    </span>
                   </li>
                 </ul>
               </div>

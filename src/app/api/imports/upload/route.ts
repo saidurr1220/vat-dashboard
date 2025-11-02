@@ -49,19 +49,48 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate required columns
-        const requiredColumns = [
-            'boe_no', 'boe_date', 'office_code', 'item_no', 'hs_code',
-            'description', 'assessable_value', 'base_vat', 'sd', 'vat', 'at', 'qty', 'unit'
-        ];
-
+        // Check for different CSV formats
         const firstRecord = records[0];
+        const hasStandardFormat = 'assessable_value' in firstRecord && 'vat' in firstRecord && 'at' in firstRecord;
+        const hasEnhancedFormat = 'assessable_value' in firstRecord && 'cd_rate' in firstRecord;
+        const hasSimpleFormat = 'base_value' in firstRecord && 'sd_value' in firstRecord;
+        const hasOldSimpleFormat = 'base_value' in firstRecord && 'declared_unit_value' in firstRecord;
+
+        // Validate required columns based on format
+        let requiredColumns: string[];
+        if (hasEnhancedFormat) {
+            // Enhanced format with Bangladesh customs calculation
+            requiredColumns = [
+                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
+                'assessable_value', 'cd_rate', 'rd_rate', 'sd_rate', 'vat_rate', 'ait_rate', 'at_rate', 'unit', 'qty'
+            ];
+        } else if (hasSimpleFormat) {
+            // Simple format with base + SD calculation (আপনার format)
+            requiredColumns = [
+                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
+                'base_value', 'sd_value', 'unit', 'qty'
+            ];
+        } else if (hasOldSimpleFormat) {
+            // Old simple format with basic calculation
+            requiredColumns = [
+                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
+                'base_value', 'sd', 'unit', 'pairs_final', 'declared_unit_value'
+            ];
+        } else {
+            // Standard format
+            requiredColumns = [
+                'boe_no', 'boe_date', 'office_code', 'item_no', 'hs_code',
+                'description', 'assessable_value', 'base_vat', 'sd', 'vat', 'at', 'qty', 'unit'
+            ];
+        }
+
         const missingColumns = requiredColumns.filter(col => !(col in firstRecord));
 
         if (missingColumns.length > 0) {
+            const formatType = hasEnhancedFormat ? 'Enhanced (BD Customs)' : hasSimpleFormat ? 'Simple (Base+SD)' : hasOldSimpleFormat ? 'Old Simple' : 'Standard';
             return NextResponse.json({
                 success: false,
-                message: `Missing required columns: ${missingColumns.join(', ')}`,
+                message: `Missing required columns: ${missingColumns.join(', ')}. Format detected: ${formatType}`,
             }, { status: 400 });
         }
 
@@ -81,33 +110,183 @@ export async function POST(request: NextRequest) {
                     continue;
                 }
 
-                // Check for duplicate BoE number and item
+                // Check for duplicate BoE number and item combination only
+                // Allow same BoE number with different item numbers
                 const existing = await db
-                    .select()
+                    .select({ id: importsBoe.id })
                     .from(importsBoe)
                     .where(sql`${importsBoe.boeNo} = ${record.boe_no} AND ${importsBoe.itemNo} = ${record.item_no}`)
                     .limit(1);
 
                 if (existing.length > 0) {
-                    errors.push(`Row ${rowNum}: Duplicate BoE ${record.boe_no} item ${record.item_no}`);
+                    errors.push(`Row ${rowNum}: Duplicate BoE ${record.boe_no} item ${record.item_no} already exists`);
                     continue;
                 }
 
-                // Insert record
+                // Process data based on format
+                let processedData;
+
+                if (hasEnhancedFormat) {
+                    // Enhanced format - Bangladesh customs calculation
+                    const assessableValue = parseFloat(record.assessable_value) || 0;
+                    const cdRate = parseFloat(record.cd_rate) || 25; // Default 25% CD
+                    const rdRate = parseFloat(record.rd_rate) || 3;  // Default 3% RD
+                    const sdRate = parseFloat(record.sd_rate) || 45; // Default 45% SD
+                    const vatRate = parseFloat(record.vat_rate) || 15; // Default 15% VAT
+                    const aitRate = parseFloat(record.ait_rate) || 5;  // Default 5% AIT
+                    const atRate = parseFloat(record.at_rate) || 0;    // Default 0% AT
+                    const qty = parseFloat(record.qty) || 0;
+
+                    // Bangladesh Customs Calculation:
+                    // 1. CD = Assessable Value × CD Rate%
+                    const customsDuty = assessableValue * (cdRate / 100);
+
+                    // 2. RD = Assessable Value × RD Rate%
+                    const regulatoryDuty = assessableValue * (rdRate / 100);
+
+                    // 3. Base for SD = Assessable Value + CD + RD
+                    const sdBase = assessableValue + customsDuty + regulatoryDuty;
+
+                    // 4. SD = SD Base × SD Rate%
+                    const supplementaryDuty = sdBase * (sdRate / 100);
+
+                    // 5. Base for VAT = SD Base + SD
+                    const vatBase = sdBase + supplementaryDuty;
+
+                    // 6. VAT = VAT Base × VAT Rate%
+                    const vat = vatBase * (vatRate / 100);
+
+                    // 7. AIT = Assessable Value × AIT Rate%
+                    const ait = assessableValue * (aitRate / 100);
+
+                    // 8. AT = Assessable Value × AT Rate%
+                    const at = assessableValue * (atRate / 100);
+
+                    processedData = {
+                        boeNo: record.boe_no,
+                        boeDate: boeDate,
+                        officeCode: record.office_code || null,
+                        itemNo: record.item_no,
+                        hsCode: record.hs_code || null,
+                        description: record.description || null,
+                        assessableValue: assessableValue,
+                        baseVat: customsDuty + regulatoryDuty, // Store CD+RD in baseVat field
+                        sd: supplementaryDuty,
+                        vat: vat,
+                        at: at + ait, // Combine AT and AIT
+                        qty: qty,
+                        unit: record.unit || null,
+                        // notes: `BD Customs: CD=${cdRate}%, RD=${rdRate}%, SD=${sdRate}%, VAT=${vatRate}%, AIT=${aitRate}%, AT=${atRate}%`
+                    };
+                } else if (hasSimpleFormat) {
+                    // Simple format - আপনার BoE format (Base + SD)
+                    const baseValue = parseFloat(record.base_value) || 0;
+                    const sdValue = parseFloat(record.sd_value) || 0;
+                    const qty = parseFloat(record.qty) || 0;
+
+                    console.log(`Row ${rowNum}: base_value=${record.base_value}, sd_value=${record.sd_value}, qty=${record.qty}`);
+                    console.log(`Row ${rowNum}: parsed - baseValue=${baseValue}, sdValue=${sdValue}, qty=${qty}`);
+
+                    // Validate numbers
+                    if (isNaN(baseValue) || isNaN(sdValue) || isNaN(qty)) {
+                        errors.push(`Row ${rowNum}: Invalid numeric values - base_value, sd_value, or qty`);
+                        continue;
+                    }
+
+                    // আপনার calculation with proper rounding:
+                    // AT = Base এর 5%
+                    const at = Math.round((baseValue * 0.05 + Number.EPSILON) * 100) / 100;
+
+                    // VAT = Base এর 15%
+                    const vat = Math.round((baseValue * 0.15 + Number.EPSILON) * 100) / 100;
+
+                    // Assessable Value = Base + SD
+                    const assessableValue = Math.round((baseValue + sdValue + Number.EPSILON) * 100) / 100;
+
+                    console.log(`Row ${rowNum}: calculated - AT=${at}, VAT=${vat}, Assessable=${assessableValue}`);
+
+                    processedData = {
+                        boeNo: record.boe_no,
+                        boeDate: boeDate,
+                        officeCode: record.office_code || null,
+                        itemNo: record.item_no,
+                        hsCode: record.hs_code || null,
+                        description: record.description || null,
+                        assessableValue: assessableValue,
+                        baseVat: baseValue, // Store base value
+                        sd: sdValue,
+                        vat: vat,
+                        at: at,
+                        qty: qty,
+                        unit: record.unit || null,
+                        // notes: `Simple BoE: AT=Base×5% (${at.toLocaleString()}), VAT=Base×15% (${vat.toLocaleString()})`
+                    };
+                } else if (hasOldSimpleFormat) {
+                    // Old simple format - basic calculation
+                    const baseValue = parseFloat(record.base_value) || 0;
+                    const sd = parseFloat(record.sd) || 0;
+                    const atRate = parseFloat(record.at_rate) || 3; // Default 3% AT
+                    const qty = parseFloat(record.pairs_final) || 0;
+
+                    // Calculate assessable value (base + sd)
+                    const assessableValue = baseValue + sd;
+
+                    // Calculate VAT: 15% of (base + sd)
+                    const vat = assessableValue * 0.15;
+
+                    // Calculate AT: specified rate % of assessable value
+                    const at = assessableValue * (atRate / 100);
+
+                    processedData = {
+                        boeNo: record.boe_no,
+                        boeDate: boeDate,
+                        officeCode: record.office_code || null,
+                        itemNo: record.item_no,
+                        hsCode: record.hs_code || null,
+                        description: record.description || null,
+                        assessableValue: assessableValue,
+                        baseVat: baseValue, // Store base value in baseVat field
+                        sd: sd,
+                        vat: vat,
+                        at: at,
+                        qty: qty,
+                        unit: record.unit || null,
+                        // notes: `Old simple calc: AT Rate ${atRate}%, Declared Unit Value: ${record.declared_unit_value}`
+                    };
+                } else {
+                    // Standard format - use provided values
+                    processedData = {
+                        boeNo: record.boe_no,
+                        boeDate: boeDate,
+                        officeCode: record.office_code || null,
+                        itemNo: record.item_no,
+                        hsCode: record.hs_code || null,
+                        description: record.description || null,
+                        assessableValue: record.assessable_value ? parseFloat(record.assessable_value) : null,
+                        baseVat: record.base_vat ? parseFloat(record.base_vat) : null,
+                        sd: record.sd ? parseFloat(record.sd) : null,
+                        vat: record.vat ? parseFloat(record.vat) : null,
+                        at: record.at ? parseFloat(record.at) : null,
+                        qty: record.qty ? parseFloat(record.qty) : null,
+                        unit: record.unit || null,
+                    };
+                }
+
+                // Insert record with explicit fields only
                 await db.insert(importsBoe).values({
-                    boeNo: record.boe_no,
-                    boeDate: boeDate,
-                    officeCode: record.office_code || null,
-                    itemNo: record.item_no,
-                    hsCode: record.hs_code || null,
-                    description: record.description || null,
-                    assessableValue: record.assessable_value ? record.assessable_value : null,
-                    baseVat: record.base_vat ? record.base_vat : null,
-                    sd: record.sd ? record.sd : null,
-                    vat: record.vat ? record.vat : null,
-                    at: record.at ? record.at : null,
-                    qty: record.qty ? record.qty : null,
-                    unit: record.unit || null,
+                    boeNo: processedData.boeNo,
+                    boeDate: processedData.boeDate,
+                    officeCode: processedData.officeCode,
+                    itemNo: processedData.itemNo,
+                    hsCode: processedData.hsCode,
+                    description: processedData.description,
+                    assessableValue: processedData.assessableValue?.toString() || '0',
+                    baseVat: processedData.baseVat?.toString() || '0',
+                    sd: processedData.sd?.toString() || '0',
+                    vat: processedData.vat?.toString() || '0',
+                    at: processedData.at?.toString() || '0',
+                    qty: processedData.qty?.toString() || '0',
+                    unit: processedData.unit,
                 });
 
                 imported++;

@@ -123,12 +123,11 @@ export async function POST() {
                     boeDate: boeDate,
                     itemNo: entry.BoEItemNo.toString(),
                     hsCode: entry.HS || '',
-                    description: entry.Description,
+                    description: `${entry.Description} (${entry.Category})`,
                     assessableValue: entry.Base?.toString() || '0',
                     sd: entry.SD?.toString() || '0',
                     qty: entry.PairsFinal?.toString() || '0',
-                    unit: 'Pair',
-                    notes: `Category: ${entry.Category}, Month: ${entry.Month}`
+                    unit: 'Pair'
                 });
 
                 // Create BoE lot

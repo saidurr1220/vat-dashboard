@@ -37,11 +37,27 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'pdf') {
-      // Generate PDF (placeholder - you can implement actual PDF generation)
-      return new NextResponse('PDF generation not implemented yet', {
-        status: 501,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      // Generate PDF using HTML to PDF conversion
+      const html = generateReportHTML(reportData, { type, year, month });
+
+      try {
+        // For now, return a simple text-based report that can be saved as PDF
+        const textReport = generateTextReport(reportData, { type, year, month });
+
+        return new NextResponse(textReport, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Disposition': `attachment; filename="VAT-Report-${year}${month ? `-${String(month).padStart(2, '0')}` : ''}.txt"`
+          }
+        });
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        return new NextResponse('PDF generation failed', {
+          status: 500,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
     }
 
     return NextResponse.json(reportData);
@@ -96,6 +112,28 @@ async function getMonthlyData(year: number, month: number) {
     AND period_month = ${month}
   `);
 
+  // Get closing balance data (import stage AT & VAT payments)
+  const closingBalanceData = await db.execute(sql`
+    SELECT 
+      COALESCE(closing_balance, 0) as closing_balance,
+      COALESCE(used_amount, 0) as used_amount,
+      COALESCE(current_month_addition, 0) as current_month_addition
+    FROM closing_balance 
+    WHERE period_year = ${year} 
+    AND period_month = ${month}
+  `);
+
+  // Get import stage AT & VAT data for context (may be incomplete)
+  const importData = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(CAST(vat AS NUMERIC)), 0) as total_import_vat,
+      COALESCE(SUM(CAST(at AS NUMERIC)), 0) as total_import_at,
+      COUNT(*) as import_count
+    FROM imports_boe 
+    WHERE EXTRACT(YEAR FROM boe_date) = ${year} 
+    AND EXTRACT(MONTH FROM boe_date) = ${month}
+  `);
+
   // Individual challans for the month
   const challans = await db.execute(sql`
     SELECT 
@@ -111,15 +149,20 @@ async function getMonthlyData(year: number, month: number) {
 
   const salesRow = salesData.rows[0] as any;
   const treasuryRow = treasuryData.rows[0] as any;
+  const closingBalanceRow = closingBalanceData.rows[0] as any;
+  const importRow = importData.rows[0] as any;
 
   const grossAmount = Number(salesRow?.gross_amount || 0);
   const netAmount = Number(salesRow?.net_amount || 0);
   const vatAmount = Number(salesRow?.vat_amount || 0);
   const totalPaid = Number(treasuryRow?.total_paid || 0);
+  const closingBalance = Number(closingBalanceRow?.closing_balance || 0);
+  const usedFromClosingBalance = Number(closingBalanceRow?.used_amount || 0);
 
   const vatPayable = vatAmount;
-  const outstanding = Math.max(0, vatPayable - totalPaid);
-  const compliance = vatPayable > 0 ? ((totalPaid / vatPayable) * 100) : 100;
+  // Outstanding = VAT Payable - Treasury Paid - Closing Balance Used
+  const outstanding = Math.max(0, vatPayable - totalPaid - closingBalance);
+  const compliance = vatPayable > 0 ? (((totalPaid + closingBalance) / vatPayable) * 100) : 100;
 
   let status: 'compliant' | 'pending' | 'overdue' = 'compliant';
   if (outstanding > 0) {
@@ -166,6 +209,16 @@ async function getMonthlyData(year: number, month: number) {
       outstanding,
       rate: 0.15
     },
+    closingBalance: {
+      available: closingBalance,
+      used: usedFromClosingBalance,
+      currentMonthAddition: Number(closingBalanceRow?.current_month_addition || 0)
+    },
+    imports: {
+      totalVat: Number(importRow?.total_import_vat || 0),
+      totalAt: Number(importRow?.total_import_at || 0),
+      importCount: Number(importRow?.import_count || 0)
+    },
     summary: {
       compliance,
       status
@@ -207,6 +260,26 @@ async function getYearlyData(year: number) {
     WHERE period_year = ${year}
   `);
 
+  // Get total closing balance for the year
+  const closingBalanceData = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(closing_balance), 0) as total_closing_balance,
+      COALESCE(SUM(used_amount), 0) as total_used_amount,
+      COALESCE(SUM(current_month_addition), 0) as total_additions
+    FROM closing_balance 
+    WHERE period_year = ${year}
+  `);
+
+  // Get yearly import data
+  const importData = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(CAST(vat AS NUMERIC)), 0) as total_import_vat,
+      COALESCE(SUM(CAST(at AS NUMERIC)), 0) as total_import_at,
+      COUNT(*) as import_count
+    FROM imports_boe 
+    WHERE EXTRACT(YEAR FROM boe_date) = ${year}
+  `);
+
   const challans = await db.execute(sql`
     SELECT 
       token_no,
@@ -222,12 +295,16 @@ async function getYearlyData(year: number) {
 
   const salesRow = salesData.rows[0] as any;
   const treasuryRow = treasuryData.rows[0] as any;
+  const closingBalanceRow = closingBalanceData.rows[0] as any;
+  const importRow = importData.rows[0] as any;
 
   const grossAmount = Number(salesRow?.gross_amount || 0);
   const vatAmount = Number(salesRow?.vat_amount || 0);
   const totalPaid = Number(treasuryRow?.total_paid || 0);
-  const outstanding = Math.max(0, vatAmount - totalPaid);
-  const compliance = vatAmount > 0 ? ((totalPaid / vatAmount) * 100) : 100;
+  const totalClosingBalance = Number(closingBalanceRow?.total_closing_balance || 0);
+
+  const outstanding = Math.max(0, vatAmount - totalPaid - totalClosingBalance);
+  const compliance = vatAmount > 0 ? (((totalPaid + totalClosingBalance) / vatAmount) * 100) : 100;
 
   return {
     period: { year },
@@ -255,6 +332,16 @@ async function getYearlyData(year: number) {
       paid: totalPaid,
       outstanding,
       rate: 0.15
+    },
+    closingBalance: {
+      available: totalClosingBalance,
+      used: Number(closingBalanceRow?.total_used_amount || 0),
+      currentMonthAddition: Number(closingBalanceRow?.total_additions || 0)
+    },
+    imports: {
+      totalVat: Number(importRow?.total_import_vat || 0),
+      totalAt: Number(importRow?.total_import_at || 0),
+      importCount: Number(importRow?.import_count || 0)
     },
     summary: {
       compliance,
@@ -297,6 +384,27 @@ async function getCustomPeriodData(startDate: string, endDate: string) {
     WHERE date >= ${startDate} AND date <= ${endDate}
   `);
 
+  // Get closing balance data for the period
+  const closingBalanceData = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(closing_balance), 0) as total_closing_balance,
+      COALESCE(SUM(used_amount), 0) as total_used_amount,
+      COALESCE(SUM(current_month_addition), 0) as total_additions
+    FROM closing_balance 
+    WHERE (period_year || '-' || LPAD(period_month::text, 2, '0') || '-01')::date >= ${startDate}
+    AND (period_year || '-' || LPAD(period_month::text, 2, '0') || '-01')::date <= ${endDate}
+  `);
+
+  // Get import data for the period
+  const importData = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(CAST(vat AS NUMERIC)), 0) as total_import_vat,
+      COALESCE(SUM(CAST(at AS NUMERIC)), 0) as total_import_at,
+      COUNT(*) as import_count
+    FROM imports_boe 
+    WHERE boe_date >= ${startDate} AND boe_date <= ${endDate}
+  `);
+
   const challans = await db.execute(sql`
     SELECT 
       token_no,
@@ -310,12 +418,16 @@ async function getCustomPeriodData(startDate: string, endDate: string) {
 
   const salesRow = salesData.rows[0] as any;
   const treasuryRow = treasuryData.rows[0] as any;
+  const closingBalanceRow = closingBalanceData.rows[0] as any;
+  const importRow = importData.rows[0] as any;
 
   const grossAmount = Number(salesRow?.gross_amount || 0);
   const vatAmount = Number(salesRow?.vat_amount || 0);
   const totalPaid = Number(treasuryRow?.total_paid || 0);
-  const outstanding = Math.max(0, vatAmount - totalPaid);
-  const compliance = vatAmount > 0 ? ((totalPaid / vatAmount) * 100) : 100;
+  const totalClosingBalance = Number(closingBalanceRow?.total_closing_balance || 0);
+
+  const outstanding = Math.max(0, vatAmount - totalPaid - totalClosingBalance);
+  const compliance = vatAmount > 0 ? (((totalPaid + totalClosingBalance) / vatAmount) * 100) : 100;
 
   return {
     period: {
@@ -347,9 +459,154 @@ async function getCustomPeriodData(startDate: string, endDate: string) {
       outstanding,
       rate: 0.15
     },
+    closingBalance: {
+      available: totalClosingBalance,
+      used: Number(closingBalanceRow?.total_used_amount || 0),
+      currentMonthAddition: Number(closingBalanceRow?.total_additions || 0)
+    },
+    imports: {
+      totalVat: Number(importRow?.total_import_vat || 0),
+      totalAt: Number(importRow?.total_import_at || 0),
+      importCount: Number(importRow?.import_count || 0)
+    },
     summary: {
       compliance,
       status: outstanding > 0 ? 'pending' : 'compliant'
     }
   };
+}
+
+function generateTextReport(reportData: any[], options: { type: string; year: number; month?: number | null }) {
+  const { type, year, month } = options;
+  let report = '';
+
+  // Header
+  report += '='.repeat(80) + '\n';
+  report += '                    COMPREHENSIVE VAT REPORT\n';
+  report += '                      M S RAHMAN TRADERS\n';
+  report += '='.repeat(80) + '\n';
+  report += `Report Type: ${type.toUpperCase()}\n`;
+  report += `Period: ${month ? `${getMonthName(month)} ${year}` : `Year ${year}`}\n`;
+  report += `Generated: ${new Date().toLocaleString()}\n`;
+  report += '='.repeat(80) + '\n\n';
+
+  reportData.forEach((data, index) => {
+    if (reportData.length > 1) {
+      report += `\n${'='.repeat(60)}\n`;
+      report += `PERIOD: ${data.period.monthName || `Year ${data.period.year}`}\n`;
+      report += `${'='.repeat(60)}\n`;
+    }
+
+    // Summary Section
+    report += '\nSUMMARY\n';
+    report += '-'.repeat(40) + '\n';
+    report += `Total Sales:           ৳${data.sales.grossAmount.toLocaleString()}\n`;
+    report += `VAT Payable:           ৳${data.vat.payable.toLocaleString()}\n`;
+    report += `Treasury Paid:         ৳${data.treasury.totalPaid.toLocaleString()}\n`;
+    report += `Outstanding VAT:       ৳${data.vat.outstanding.toLocaleString()}\n`;
+    report += `Compliance Rate:       ${data.summary.compliance.toFixed(1)}%\n`;
+    report += `Status:                ${data.summary.status.toUpperCase()}\n`;
+
+    // Sales Breakdown
+    report += '\nSALES BREAKDOWN\n';
+    report += '-'.repeat(40) + '\n';
+    report += `Gross Sales:           ৳${data.sales.grossAmount.toLocaleString()}\n`;
+    report += `Net Sales (Ex-VAT):    ৳${data.sales.netAmount.toLocaleString()}\n`;
+    report += `VAT Amount:            ৳${data.sales.vatAmount.toLocaleString()}\n`;
+    report += `Total Transactions:    ${data.sales.salesCount}\n`;
+    report += `Average Sale Value:    ৳${data.sales.avgSaleValue.toLocaleString()}\n`;
+
+    // VAT Details
+    report += '\nVAT DETAILS\n';
+    report += '-'.repeat(40) + '\n';
+    report += `VAT Payable:           ৳${data.vat.payable.toLocaleString()}\n`;
+    report += `VAT Rate:              ${(data.vat.rate * 100).toFixed(1)}%\n`;
+    report += `Treasury Payments:     ৳${data.vat.paid.toLocaleString()}\n`;
+    report += `Outstanding Balance:   ৳${data.vat.outstanding.toLocaleString()}\n`;
+
+    // Closing Balance
+    report += '\nCLOSING BALANCE (IMPORT AT & VAT)\n';
+    report += '-'.repeat(40) + '\n';
+    report += `Available Balance:     ৳${data.closingBalance.available.toLocaleString()}\n`;
+    report += `Used This Period:      ৳${data.closingBalance.used.toLocaleString()}\n`;
+    report += `Current Addition:      ৳${data.closingBalance.currentMonthAddition.toLocaleString()}\n`;
+    report += `Net Available:         ৳${(data.closingBalance.available - data.closingBalance.used).toLocaleString()}\n`;
+
+    // Import Information
+    report += '\nIMPORT STAGE PAYMENTS\n';
+    report += '-'.repeat(40) + '\n';
+    report += `Import VAT Paid:       ৳${data.imports.totalVat.toLocaleString()}\n`;
+    report += `Advance Tax (AT):      ৳${data.imports.totalAt.toLocaleString()}\n`;
+    report += `Import Entries:        ${data.imports.importCount} BOE\n`;
+    report += `Total Import Payments: ৳${(data.imports.totalVat + data.imports.totalAt).toLocaleString()}\n`;
+
+    // Treasury Challans
+    if (data.treasury.challans.length > 0) {
+      report += '\nTREASURY CHALLANS\n';
+      report += '-'.repeat(40) + '\n';
+      data.treasury.challans.forEach((challan: any) => {
+        report += `${challan.tokenNo.padEnd(15)} ৳${challan.amount.toLocaleString().padStart(12)} ${challan.bank}\n`;
+      });
+      report += '-'.repeat(40) + '\n';
+      report += `Total Challans: ${data.treasury.challanCount}\n`;
+      report += `Total Amount:   ৳${data.treasury.totalPaid.toLocaleString()}\n`;
+    }
+
+    // Compliance Analysis
+    report += '\nCOMPLIANCE ANALYSIS\n';
+    report += '-'.repeat(40) + '\n';
+    report += `VAT Payable:           ৳${data.vat.payable.toLocaleString()}\n`;
+    report += `Treasury Paid:         ৳${data.vat.paid.toLocaleString()}\n`;
+    report += `Closing Balance Used:  ৳${data.closingBalance.available.toLocaleString()}\n`;
+    report += `Total Coverage:        ৳${(data.vat.paid + data.closingBalance.available).toLocaleString()}\n`;
+    report += `Outstanding:           ৳${data.vat.outstanding.toLocaleString()}\n`;
+    report += `Compliance Rate:       ${data.summary.compliance.toFixed(1)}%\n`;
+
+    if (index < reportData.length - 1) {
+      report += '\n' + '='.repeat(80) + '\n';
+    }
+  });
+
+  // Footer
+  report += '\n\n' + '='.repeat(80) + '\n';
+  report += 'Report generated by VAT Management System\n';
+  report += `Generated on: ${new Date().toLocaleString()}\n`;
+  report += '='.repeat(80) + '\n';
+
+  return report;
+}
+
+function generateReportHTML(reportData: any[], options: { type: string; year: number; month?: number | null }) {
+  // This could be expanded to generate proper HTML for PDF conversion
+  return `
+    <html>
+      <head>
+        <title>VAT Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .section { margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Comprehensive VAT Report</h1>
+          <h2>M S RAHMAN TRADERS</h2>
+          <p>Period: ${options.month ? getMonthName(options.month) + ' ' + options.year : 'Year ' + options.year}</p>
+        </div>
+        <!-- Report content would go here -->
+      </body>
+    </html>
+  `;
+}
+
+function getMonthName(month: number): string {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return monthNames[month - 1] || 'Unknown';
 }

@@ -52,26 +52,30 @@ export async function GET(request: NextRequest) {
             return response;
         }
 
+        // Get all sales data in one query for better performance
+        let salesData: { [key: number]: number } = {};
+        try {
+            const salesResult = await db.execute(sql`
+                SELECT 
+                    product_id,
+                    COALESCE(SUM(CAST(qty AS NUMERIC)), 0) as total_sold
+                FROM sales_lines 
+                GROUP BY product_id
+            `);
+
+            salesResult.rows.forEach((row: any) => {
+                salesData[Number(row.product_id)] = Number(row.total_sold || 0);
+            });
+        } catch (error) {
+            console.log('Sales calculation failed:', error);
+        }
+
         // Calculate stock values and get sales data for full requests
-        const productsWithStock = await Promise.all(result.rows.map(async (product: any) => {
+        const productsWithStock = result.rows.map((product: any) => {
             const costExVat = Number(product.costExVat || 0);
             const sellExVat = Number(product.sellExVat || 0);
             const stockOnHand = Number(product.stockOnHand || 0);
-
-            // Get total sold quantity from sales_lines (skip for performance)
-            let totalSold = 0;
-            // Commenting out expensive query for better performance
-            // try {
-            //     const salesResult = await db.execute(sql`
-            //         SELECT COALESCE(SUM(CAST(qty AS NUMERIC)), 0) as total_sold
-            //         FROM sales_lines 
-            //         WHERE product_id = ${product.id}
-            //     `);
-            //     totalSold = Number(salesResult.rows[0]?.total_sold || 0);
-            // } catch (error) {
-            //     console.log(`Sales calculation failed for product ${product.id}:`, error);
-            //     totalSold = 0;
-            // }
+            const totalSold = salesData[product.id] || 0;
 
             return {
                 id: product.id,
@@ -91,7 +95,7 @@ export async function GET(request: NextRequest) {
                 createdAt: product.createdAt,
                 updatedAt: product.updatedAt
             };
-        }));
+        });
 
         const response = NextResponse.json(productsWithStock);
         response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');

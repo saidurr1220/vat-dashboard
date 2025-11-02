@@ -57,9 +57,6 @@ export const importsBoe = pgTable("imports_boe", {
     at: numeric("at"),
     qty: numeric("qty"),
     unit: text("unit"),
-    weightNet: numeric("weight_net"),
-    weightGross: numeric("weight_gross"),
-    notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow()
 }, (table) => ({
     boeItemUnique: unique("imports_boe_no_item_unique").on(table.boeNo, table.itemNo),

@@ -1,0 +1,2 @@
+boe_date,boe_no,item_no,description,hs_code,base_value,sd_value,unit,qty,purchase_category,month
+2025-11-02,TEST001,1,Test Product,6403.99.00,10000,2000,Pc,10,Test,November

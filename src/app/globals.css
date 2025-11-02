@@ -145,10 +145,7 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
+  /* Smooth scrolling handled by Next.js */
   
   /* Custom scrollbar */
   ::-webkit-scrollbar {

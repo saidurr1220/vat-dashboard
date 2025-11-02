@@ -38,11 +38,9 @@ const navigation = [
   { name: "Footwear System", href: "/footwear", icon: Package },
   { name: "Imports (BoE)", href: "/imports", icon: FileText },
   { name: "Treasury", href: "/treasury", icon: Banknote },
-  { name: "VAT Reports", href: "/vat", icon: TrendingUp },
-  { name: "VAT Management", href: "/vat/manage", icon: Scale },
+  { name: "VAT Management", href: "/vat-management", icon: Scale },
   { name: "Comprehensive Reports", href: "/vat/reports", icon: Download },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },
-  { name: "Closing Balance", href: "/vat/closing-balance", icon: Wallet },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
-import { importsBoe } from '@/db/schema';
+import { treasuryChallans } from '@/db/schema';
 import { sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -12,26 +12,26 @@ export async function GET(request: NextRequest) {
             // Return summary data for dashboard
             const result = await db.execute(sql`
         SELECT 
-          id,
-          boe_no,
-          boe_date,
-          vat,
-          at,
-          assessable_value
-        FROM imports_boe 
-        ORDER BY boe_date DESC
+          token_no,
+          amount_bdt,
+          date,
+          bank,
+          period_year,
+          period_month
+        FROM treasury_challans 
+        ORDER BY date DESC
       `);
 
             return NextResponse.json(result.rows);
         }
 
-        // Regular imports data fetch
-        const imports = await db.select().from(importsBoe).orderBy(importsBoe.boeDate);
-        return NextResponse.json(imports);
+        // Regular treasury data fetch
+        const challans = await db.select().from(treasuryChallans).orderBy(treasuryChallans.date);
+        return NextResponse.json(challans);
     } catch (error) {
-        console.error('Error fetching imports data:', error);
+        console.error('Error fetching treasury data:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch imports data' },
+            { error: 'Failed to fetch treasury data' },
             { status: 500 }
         );
     }

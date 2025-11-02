@@ -1,0 +1,2 @@
+boe_date,boe_no,item_no,description,hs_code,assessable_value,cd_rate,rd_rate,sd_rate,vat_rate,ait_rate,at_rate,unit,qty
+2025-10-15,BOE123456,1,Test Import Item,6403.99.00,2504457.96,25,3,45,15,5,0,Pair,100

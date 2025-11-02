@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrencyToMillions, getDisplayFormat } from "@/lib/format-utils";
+import { generateComprehensiveReportPDF } from "@/lib/pdf-generator";
 import {
   Select,
   SelectContent,
@@ -33,6 +35,7 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  Package,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -66,6 +69,16 @@ interface ReportData {
     paid: number;
     outstanding: number;
     rate: number;
+  };
+  closingBalance: {
+    available: number;
+    used: number;
+    currentMonthAddition: number;
+  };
+  imports: {
+    totalVat: number;
+    totalAt: number;
+    importCount: number;
   };
   summary: {
     compliance: number; // percentage
@@ -136,34 +149,37 @@ export default function ComprehensiveVATReports() {
 
   const downloadPDF = async (period?: { year: number; month?: number }) => {
     try {
-      const params = new URLSearchParams({
+      // Use the current reportData to generate PDF
+      if (reportData.length === 0) {
+        showError("Error", "No data available to generate PDF");
+        return;
+      }
+
+      const dataToUse = period
+        ? reportData.filter(
+            (data) =>
+              data.period.year === period.year &&
+              (!period.month || data.period.month === period.month)
+          )
+        : reportData;
+
+      if (dataToUse.length === 0) {
+        showError("Error", "No data available for selected period");
+        return;
+      }
+
+      const pdf = generateComprehensiveReportPDF(dataToUse, {
         type: filters.reportType,
-        year: filters.year.toString(),
-        format: "pdf",
-        ...(period?.month && { month: period.month.toString() }),
-        ...(filters.reportType === "custom" && {
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-        }),
+        year: period?.year || filters.year,
+        month: period?.month,
       });
 
-      const response = await fetch(`/api/vat/comprehensive-report?${params}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `VAT-Report-${filters.year}${
-          period?.month ? `-${String(period.month).padStart(2, "0")}` : ""
-        }.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        showSuccess("Success", "Report downloaded successfully");
-      } else {
-        showError("Error", "Failed to download report");
-      }
+      const filename = `VAT-Report-${period?.year || filters.year}${
+        period?.month ? `-${String(period.month).padStart(2, "0")}` : ""
+      }.pdf`;
+
+      pdf.save(filename);
+      showSuccess("Success", "Report downloaded successfully");
     } catch (error) {
       console.error("Error downloading report:", error);
       showError("Error", "Failed to download report");
@@ -401,7 +417,7 @@ export default function ComprehensiveVATReports() {
                             Total Sales
                           </p>
                           <p className="text-2xl font-bold text-blue-900">
-                            ৳{data.sales.grossAmount.toLocaleString()}
+                            {formatCurrencyToMillions(data.sales.grossAmount)}
                           </p>
                           <p className="text-xs text-blue-600">
                             {data.sales.salesCount} transactions
@@ -418,7 +434,7 @@ export default function ComprehensiveVATReports() {
                             VAT Payable
                           </p>
                           <p className="text-2xl font-bold text-green-900">
-                            ৳{data.vat.payable.toLocaleString()}
+                            {formatCurrencyToMillions(data.vat.payable)}
                           </p>
                           <p className="text-xs text-green-600">
                             {data.vat.rate * 100}% rate
@@ -435,7 +451,7 @@ export default function ComprehensiveVATReports() {
                             Treasury Paid
                           </p>
                           <p className="text-2xl font-bold text-purple-900">
-                            ৳{data.treasury.totalPaid.toLocaleString()}
+                            {formatCurrencyToMillions(data.treasury.totalPaid)}
                           </p>
                           <p className="text-xs text-purple-600">
                             {data.treasury.challanCount} challans
@@ -452,17 +468,111 @@ export default function ComprehensiveVATReports() {
                             Outstanding
                           </p>
                           <p className="text-2xl font-bold text-orange-900">
-                            ৳{data.vat.outstanding.toLocaleString()}
+                            {formatCurrencyToMillions(data.vat.outstanding)}
                           </p>
                           <p className="text-xs text-orange-600">
-                            {(
-                              (data.vat.outstanding / data.vat.payable) *
-                              100
-                            ).toFixed(1)}
-                            % pending
+                            After closing balance
                           </p>
                         </div>
                         <AlertTriangle className="w-8 h-8 text-orange-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Closing Balance & Import Information */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    {/* Closing Balance Details */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200">
+                      <h3 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Closing Balance (Import AT & VAT)
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-indigo-700">
+                            Available Balance:
+                          </span>
+                          <span className="font-medium text-indigo-900">
+                            {formatCurrencyToMillions(
+                              data.closingBalance.available
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-indigo-700">
+                            Used This Period:
+                          </span>
+                          <span className="font-medium text-indigo-900">
+                            {formatCurrencyToMillions(data.closingBalance.used)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-indigo-700">
+                            Current Addition:
+                          </span>
+                          <span className="font-medium text-indigo-900">
+                            {formatCurrencyToMillions(
+                              data.closingBalance.currentMonthAddition
+                            )}
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t border-indigo-200">
+                          <div className="flex justify-between">
+                            <span className="text-indigo-700 font-medium">
+                              Net Available:
+                            </span>
+                            <span className="font-bold text-indigo-900">
+                              {formatCurrencyToMillions(
+                                data.closingBalance.available -
+                                  data.closingBalance.used
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Import Stage Information */}
+                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200">
+                      <h3 className="font-semibold text-teal-900 mb-3 flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Import Stage Payments
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-teal-700">
+                            Import VAT Paid:
+                          </span>
+                          <span className="font-medium text-teal-900">
+                            {formatCurrencyToMillions(data.imports.totalVat)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-teal-700">
+                            Advance Tax (AT):
+                          </span>
+                          <span className="font-medium text-teal-900">
+                            {formatCurrencyToMillions(data.imports.totalAt)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-teal-700">Import Entries:</span>
+                          <span className="font-medium text-teal-900">
+                            {data.imports.importCount} BOE
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t border-teal-200">
+                          <div className="flex justify-between">
+                            <span className="text-teal-700 font-medium">
+                              Total Import Payments:
+                            </span>
+                            <span className="font-bold text-teal-900">
+                              {formatCurrencyToMillions(
+                                data.imports.totalVat + data.imports.totalAt
+                              )}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -479,7 +589,7 @@ export default function ComprehensiveVATReports() {
                         <div className="flex justify-between">
                           <span className="text-gray-600">Gross Sales:</span>
                           <span className="font-medium">
-                            ৳{data.sales.grossAmount.toLocaleString()}
+                            {formatCurrencyToMillions(data.sales.grossAmount)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -487,13 +597,13 @@ export default function ComprehensiveVATReports() {
                             Net Sales (Ex-VAT):
                           </span>
                           <span className="font-medium">
-                            ৳{data.sales.netAmount.toLocaleString()}
+                            {formatCurrencyToMillions(data.sales.netAmount)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">VAT Amount:</span>
                           <span className="font-medium">
-                            ৳{data.sales.vatAmount.toLocaleString()}
+                            {formatCurrencyToMillions(data.sales.vatAmount)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -501,7 +611,7 @@ export default function ComprehensiveVATReports() {
                             Average Sale Value:
                           </span>
                           <span className="font-medium">
-                            ৳{data.sales.avgSaleValue.toLocaleString()}
+                            {formatCurrencyToMillions(data.sales.avgSaleValue)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -538,7 +648,7 @@ export default function ComprehensiveVATReports() {
                               </div>
                               <div className="text-right">
                                 <div className="font-medium">
-                                  ৳{challan.amount.toLocaleString()}
+                                  {formatCurrencyToMillions(challan.amount)}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {new Date(challan.date).toLocaleDateString()}
@@ -555,30 +665,88 @@ export default function ComprehensiveVATReports() {
                     </div>
                   </div>
 
-                  {/* Compliance Status */}
+                  {/* Enhanced Compliance Status */}
                   <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4">
                     <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
-                      Compliance Summary
+                      Enhanced Compliance Summary
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">VAT Payable:</span>
-                        <span className="ml-2 font-medium">
-                          ৳{data.vat.payable.toLocaleString()}
-                        </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">VAT Payable:</span>
+                          <span className="font-medium">
+                            {formatCurrencyToMillions(data.vat.payable)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Treasury Paid:</span>
+                          <span className="font-medium">
+                            {formatCurrencyToMillions(data.vat.paid)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            Closing Balance Used:
+                          </span>
+                          <span className="font-medium">
+                            {formatCurrencyToMillions(
+                              data.closingBalance.available
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span className="text-gray-600 font-medium">
+                            Total Coverage:
+                          </span>
+                          <span className="font-bold">
+                            {formatCurrencyToMillions(
+                              data.vat.paid + data.closingBalance.available
+                            )}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Amount Paid:</span>
-                        <span className="ml-2 font-medium">
-                          ৳{data.vat.paid.toLocaleString()}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Compliance Rate:</span>
-                        <span className="ml-2 font-medium">
-                          {data.summary.compliance.toFixed(1)}%
-                        </span>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            Outstanding Balance:
+                          </span>
+                          <span
+                            className={`font-medium ${
+                              data.vat.outstanding > 0
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {formatCurrencyToMillions(data.vat.outstanding)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            Compliance Rate:
+                          </span>
+                          <span
+                            className={`font-medium ${
+                              data.summary.compliance >= 100
+                                ? "text-green-600"
+                                : "text-orange-600"
+                            }`}
+                          >
+                            {data.summary.compliance.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Status:</span>
+                          <Badge
+                            className={getComplianceColor(data.summary.status)}
+                          >
+                            {getStatusIcon(data.summary.status)}
+                            <span className="ml-1">
+                              {data.summary.status.charAt(0).toUpperCase() +
+                                data.summary.status.slice(1)}
+                            </span>
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>

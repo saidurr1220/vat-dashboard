@@ -86,15 +86,30 @@ export default function FastProductsList() {
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory]);
 
-  // Calculate stats
+  // Calculate enhanced stats
+  // Calculate enhanced stats
+  const totalStockValue = products.reduce(
+    (sum, p) => sum + p.stockOnHand * p.costExVat,
+    0
+  );
+
   const stats = {
     totalProducts: products.length,
-    totalStockValue: products.reduce(
-      (sum, p) => sum + p.stockOnHand * p.costExVat,
-      0
-    ),
+    totalStockValue,
+    inStockProducts: products.filter((p) => p.stockOnHand > 0).length,
+    lowStockProducts: products.filter(
+      (p) => p.stockOnHand > 0 && p.stockOnHand < 10
+    ).length,
+    outOfStockProducts: products.filter((p) => p.stockOnHand <= 0).length,
+    stockAvailability:
+      products.length > 0
+        ? (products.filter((p) => p.stockOnHand > 0).length / products.length) *
+          100
+        : 0,
     footwearCount: products.filter((p) => p.category === "Footwear").length,
     reagentCount: products.filter((p) => p.category === "Reagent").length,
+    averageStockValue:
+      products.length > 0 ? totalStockValue / products.length : 0,
   };
 
   if (loading) {
@@ -123,7 +138,7 @@ export default function FastProductsList() {
 
   return (
     <>
-      {/* Stats Cards */}
+      {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KPICard
           title="Total Products"
@@ -135,31 +150,130 @@ export default function FastProductsList() {
         />
 
         <KPICard
-          title="Stock Value"
-          value={`৳${stats.totalStockValue.toLocaleString()}`}
-          subtitle="Total inventory"
+          title="Stock Availability"
+          value={`${stats.stockAvailability.toFixed(1)}%`}
+          subtitle={`${stats.inStockProducts} in stock`}
           icon={<DollarSign className="w-5 h-5" />}
           color="green"
           size="md"
         />
 
         <KPICard
-          title="Footwear"
-          value={stats.footwearCount}
-          subtitle="Products"
-          icon={<Package className="w-5 h-5" />}
-          color="purple"
-          size="md"
-        />
-
-        <KPICard
-          title="Reagents"
-          value={stats.reagentCount}
-          subtitle="Test kits"
+          title="Low Stock Alert"
+          value={stats.lowStockProducts}
+          subtitle="Need reorder"
           icon={<Package className="w-5 h-5" />}
           color="orange"
           size="md"
         />
+
+        <KPICard
+          title="Inventory Value"
+          value={`৳${(stats.totalStockValue / 1000000).toFixed(1)}M`}
+          subtitle="Total stock value"
+          icon={<DollarSign className="w-5 h-5" />}
+          color="purple"
+          size="md"
+        />
+      </div>
+
+      {/* Business Analytics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
+              <Package className="h-5 w-5" />
+              Stock Status Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-blue-600">In Stock:</span>
+                <Badge className="bg-green-100 text-green-800 border-green-200">
+                  {stats.inStockProducts} items
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-blue-600">Low Stock:</span>
+                <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                  {stats.lowStockProducts} items
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-blue-600">Out of Stock:</span>
+                <Badge className="bg-red-100 text-red-800 border-red-200">
+                  {stats.outOfStockProducts} items
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-green-700">
+              <DollarSign className="h-5 w-5" />
+              Financial Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-600">Total Value:</span>
+                <span className="font-bold text-green-800">
+                  ৳{stats.totalStockValue.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-600">Avg per Product:</span>
+                <span className="font-bold text-green-800">
+                  ৳{stats.averageStockValue.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-600">Categories:</span>
+                <span className="font-bold text-green-800">
+                  {categories.length} types
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-purple-700">
+              <Package className="h-5 w-5" />
+              Category Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-purple-600">Footwear:</span>
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  {stats.footwearCount} items
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-purple-600">Reagents:</span>
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  {stats.reagentCount} items
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-purple-600">Others:</span>
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  {stats.totalProducts -
+                    stats.footwearCount -
+                    stats.reagentCount}{" "}
+                  items
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Products Table */}
@@ -249,6 +363,9 @@ export default function FastProductsList() {
                     <th className="text-right p-3 text-sm font-medium text-gray-600">
                       Sell (Ex-VAT)
                     </th>
+                    <th className="text-right p-3 text-sm font-medium text-gray-600">
+                      Stock Value
+                    </th>
                     <th className="text-center p-3 text-sm font-medium text-gray-600">
                       Actions
                     </th>
@@ -283,23 +400,51 @@ export default function FastProductsList() {
                         </Badge>
                       </td>
                       <td className="p-3 text-right">
-                        <span
-                          className={`font-medium ${
-                            product.stockOnHand > 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {product.stockOnHand > 0
-                            ? product.stockOnHand.toLocaleString()
-                            : "Out of Stock"}
-                        </span>
+                        <div className="flex items-center justify-end gap-2">
+                          <span
+                            className={`font-medium ${
+                              product.stockOnHand > 10
+                                ? "text-green-600"
+                                : product.stockOnHand > 0
+                                ? "text-orange-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {product.stockOnHand > 0
+                              ? product.stockOnHand.toLocaleString()
+                              : "Out"}
+                          </span>
+                          {product.stockOnHand <= 0 && (
+                            <Badge className="bg-red-100 text-red-800 text-xs">
+                              Empty
+                            </Badge>
+                          )}
+                          {product.stockOnHand > 0 &&
+                            product.stockOnHand <= 10 && (
+                              <Badge className="bg-orange-100 text-orange-800 text-xs">
+                                Low
+                              </Badge>
+                            )}
+                        </div>
                       </td>
                       <td className="p-3 text-right font-medium text-gray-900">
                         ৳{product.costExVat.toLocaleString()}
                       </td>
                       <td className="p-3 text-right font-medium text-gray-900">
                         ৳{product.sellExVat.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-sm font-bold text-purple-600">
+                          ৳
+                          {(
+                            product.stockOnHand * product.costExVat
+                          ).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {product.stockOnHand > 0
+                            ? `${product.stockOnHand} × ৳${product.costExVat}`
+                            : "No stock"}
+                        </div>
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-2 justify-center">

@@ -24,10 +24,7 @@ export async function GET() {
             'VAT',
             'AT',
             'Qty',
-            'Unit',
-            'Weight Net',
-            'Weight Gross',
-            'Notes'
+            'Unit'
         ];
 
         const csvRows = [
@@ -45,10 +42,7 @@ export async function GET() {
                 `"${record.vat || 0}"`,
                 `"${record.at || 0}"`,
                 `"${record.qty || 0}"`,
-                `"${record.unit || ''}"`,
-                `"${record.weightNet || 0}"`,
-                `"${record.weightGross || 0}"`,
-                `"${(record.notes || '').replace(/"/g, '""')}"`
+                `"${record.unit || ''}"`
             ].join(','))
         ];
 

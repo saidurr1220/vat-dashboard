@@ -13,6 +13,7 @@ import {
   Archive,
   ShoppingCart,
   Zap,
+  BarChart3,
 } from "lucide-react";
 import DashboardKPIs from "@/components/DashboardKPIs";
 
@@ -101,129 +102,43 @@ export default function Dashboard() {
         {/* Dynamic KPI Cards - Load via client component */}
         <DashboardKPIs />
 
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {staticFeatures.map((feature, index) => {
-            const Icon = feature.icon;
-            const getIconColor = (title: string) => {
-              if (title.includes("VAT")) return "from-blue-500 to-indigo-500";
-              if (title.includes("Footwear"))
-                return "from-orange-500 to-red-500";
-              if (title.includes("Products"))
-                return "from-green-500 to-emerald-500";
-              if (title.includes("Sales")) return "from-purple-500 to-pink-500";
-              if (title.includes("Treasury"))
-                return "from-yellow-500 to-orange-500";
-              return "from-gray-500 to-slate-500";
-            };
-
-            return (
-              <ModernCard key={index} hover className="group">
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className={`w-10 h-10 bg-gradient-to-br ${getIconColor(
-                      feature.title
-                    )} rounded-lg flex items-center justify-center`}
-                  >
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {feature.title}
-                    </h3>
-                    <Badge variant="secondary" className="text-xs mt-1">
-                      {feature.status}
-                    </Badge>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-4">
-                  {feature.description}
+        {/* Quick Stats Overview */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Business Overview
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="bg-white/60 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Sales Performance
+                </h3>
+                <p className="text-gray-600">
+                  Track your sales revenue, VAT calculations, and monthly
+                  performance metrics.
                 </p>
-                <Link href={feature.href}>
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2 group-hover:bg-blue-50"
-                  >
-                    Open {feature.title}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              </ModernCard>
-            );
-          })}
-        </div>
-
-        {/* System Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ModernCard>
-            <ModernCardHeader
-              title="System Status"
-              subtitle="Current system health"
-              icon={<CheckCircle className="w-5 h-5" />}
-            />
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 text-sm">Database</h4>
-                <p className="text-xs text-gray-600">Connected</p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Banknote className="w-6 h-6 text-blue-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 text-sm">
-                  VAT System
-                </h4>
-                <p className="text-xs text-gray-600">Operational</p>
+              <div className="bg-white/60 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">
+                  VAT Compliance
+                </h3>
+                <p className="text-gray-600">
+                  Monitor VAT obligations, treasury payments, and closing
+                  balance utilization.
+                </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Calendar className="w-6 h-6 text-purple-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 text-sm">Period</h4>
-                <p className="text-xs text-gray-600">November 2025</p>
+              <div className="bg-white/60 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Import Management
+                </h3>
+                <p className="text-gray-600">
+                  Manage BOE entries, import VAT, and advance tax payments
+                  efficiently.
+                </p>
               </div>
             </div>
-          </ModernCard>
-
-          <ModernCard>
-            <ModernCardHeader
-              title="Quick Actions"
-              subtitle="Common tasks"
-              icon={<Zap className="w-5 h-5" />}
-            />
-            <div className="space-y-3">
-              <Link href="/products/new">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                >
-                  <Package className="w-4 h-4" />
-                  Add New Product
-                </Button>
-              </Link>
-              <Link href="/sales/new">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Create Sale
-                </Button>
-              </Link>
-              <Link href="/vat/monthly">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                >
-                  <Calculator className="w-4 h-4" />
-                  VAT Calculation
-                </Button>
-              </Link>
-            </div>
-          </ModernCard>
+          </div>
         </div>
       </div>
     </div>
