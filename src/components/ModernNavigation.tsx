@@ -38,6 +38,7 @@ const navigation = [
   { name: "Imports (BoE)", href: "/imports", icon: FileText },
   { name: "Treasury", href: "/treasury", icon: Banknote },
   { name: "VAT Reports", href: "/vat", icon: TrendingUp },
+  { name: "Comprehensive Reports", href: "/vat/reports", icon: FileText },
   { name: "VAT Management", href: "/vat/manage", icon: Scale },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },
   { name: "Closing Balance", href: "/vat/closing-balance", icon: Wallet },
