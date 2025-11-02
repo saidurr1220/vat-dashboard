@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   Building2,
 } from "lucide-react";
 
-export default function AdminLogin() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -220,5 +220,46 @@ export default function AdminLogin() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLogin() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md relative z-10">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <BarChart3 className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                VAT Dashboard
+              </h1>
+              <p className="text-gray-600 mt-2 flex items-center justify-center gap-2">
+                <Building2 className="w-4 h-4" />M S RAHMAN TRADERS
+              </p>
+            </div>
+            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
+              <CardContent className="flex items-center justify-center p-8">
+                <div className="flex items-center space-x-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Loading Login
+                    </h3>
+                    <p className="text-gray-600">Please wait...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
