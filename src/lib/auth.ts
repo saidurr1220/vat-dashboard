@@ -187,20 +187,22 @@ export function checkRateLimit(ip: string, maxRequests = 10, windowMs = 60000): 
 }
 
 // Admin guard middleware
-export function requireAdmin(handler: (request: NextRequest) => Promise<NextResponse>) {
-    return async (request: NextRequest): Promise<NextResponse> => {
+export function requireAdmin<T extends any[]>(
+    handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
+) {
+    return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
         try {
             // Emergency bypass for development
             if (process.env.DISABLE_AUTH === 'true') {
                 console.warn('⚠️  AUTH DISABLED - All requests allowed');
-                return handler(request);
+                return handler(request, ...args);
             }
 
             // Check if it's a write operation
             const isWriteOperation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
 
             if (!isWriteOperation) {
-                return handler(request);
+                return handler(request, ...args);
             }
 
             // Get session
@@ -233,7 +235,7 @@ export function requireAdmin(handler: (request: NextRequest) => Promise<NextResp
             // Add user info to request for audit logging
             (request as any).user = session.user;
 
-            const response = await handler(request);
+            const response = await handler(request, ...args);
 
             // Log successful write operations
             if (response.status < 400) {

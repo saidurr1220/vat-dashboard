@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { treasuryChallans } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { requireAdmin } from '@/lib/auth';
 
-export async function DELETE(
+export const DELETE = requireAdmin(async (
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-) {
+) => {
     try {
         const { id: paramId } = await params;
         const id = parseInt(paramId);
@@ -31,12 +32,12 @@ export async function DELETE(
             { status: 500 }
         );
     }
-}
+});
 
-export async function PUT(
+export const PUT = requireAdmin(async (
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-) {
+) => {
     try {
         const { id: paramId } = await params;
         const id = parseInt(paramId);
@@ -66,4 +67,4 @@ export async function PUT(
             { status: 500 }
         );
     }
-}
+});
