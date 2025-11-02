@@ -16,9 +16,10 @@ async function getVATReports() {
     const currentYear = 2025;
     const currentMonth = 10;
 
-    // Get monthly VAT summary for current year
-    const monthlyVAT = await db
+    // Get monthly VAT summary for both 2022 and 2025
+    const monthlyVAT2025 = await db
       .select({
+        year: sql<number>`2025`,
         month: sql<number>`EXTRACT(MONTH FROM ${sales.dt})`,
         grossSales: sql<number>`COALESCE(SUM(${sales.totalValue}), 0)`,
         vatAmount: sql<number>`COALESCE(SUM(
@@ -38,28 +39,85 @@ async function getVATReports() {
         salesCount: sql<number>`COUNT(*)`,
       })
       .from(sales)
-      .where(sql`EXTRACT(YEAR FROM ${sales.dt}) = ${currentYear}`)
+      .where(sql`EXTRACT(YEAR FROM ${sales.dt}) = 2025`)
       .groupBy(sql`EXTRACT(MONTH FROM ${sales.dt})`)
       .orderBy(sql`EXTRACT(MONTH FROM ${sales.dt})`);
 
-    // Get VAT ledger entries
-    const vatLedgerEntries = await db
+    const monthlyVAT2022 = await db
+      .select({
+        year: sql<number>`2022`,
+        month: sql<number>`EXTRACT(MONTH FROM ${sales.dt})`,
+        grossSales: sql<number>`COALESCE(SUM(
+        CASE 
+          WHEN ${sales.amountType} = 'INCL' 
+          THEN ${sales.totalValue}::numeric
+          ELSE ${sales.totalValue}::numeric + (${sales.totalValue}::numeric * 0.15)
+        END
+      ), 0)`,
+        vatAmount: sql<number>`COALESCE(SUM(
+        CASE 
+          WHEN ${sales.amountType} = 'INCL' 
+          THEN ${sales.totalValue}::numeric - (${sales.totalValue}::numeric / 1.15)
+          ELSE ${sales.totalValue}::numeric * 0.15
+        END
+      ), 0)`,
+        netSales: sql<number>`COALESCE(SUM(
+        CASE 
+          WHEN ${sales.amountType} = 'INCL' 
+          THEN ${sales.totalValue}::numeric / 1.15
+          ELSE ${sales.totalValue}::numeric
+        END
+      ), 0)`,
+        salesCount: sql<number>`COUNT(*)`,
+      })
+      .from(sales)
+      .where(sql`EXTRACT(YEAR FROM ${sales.dt}) = 2022`)
+      .groupBy(sql`EXTRACT(MONTH FROM ${sales.dt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${sales.dt})`);
+
+    const monthlyVAT = [...monthlyVAT2022, ...monthlyVAT2025];
+
+    // Get VAT ledger entries for both years
+    const vatLedgerEntries2025 = await db
       .select()
       .from(vatLedger)
-      .where(eq(vatLedger.periodYear, currentYear))
+      .where(eq(vatLedger.periodYear, 2025))
       .orderBy(vatLedger.periodMonth);
 
-    // Get treasury challans
-    const treasuryData = await db
+    const vatLedgerEntries2022 = await db
+      .select()
+      .from(vatLedger)
+      .where(eq(vatLedger.periodYear, 2022))
+      .orderBy(vatLedger.periodMonth);
+
+    const vatLedgerEntries = [...vatLedgerEntries2022, ...vatLedgerEntries2025];
+
+    // Get treasury challans for both years
+    const treasuryData2025 = await db
       .select({
+        year: sql<number>`2025`,
         periodMonth: treasuryChallans.periodMonth,
         totalAmount: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
         challanCount: sql<number>`COUNT(*)`,
       })
       .from(treasuryChallans)
-      .where(eq(treasuryChallans.periodYear, currentYear))
+      .where(eq(treasuryChallans.periodYear, 2025))
       .groupBy(treasuryChallans.periodMonth)
       .orderBy(treasuryChallans.periodMonth);
+
+    const treasuryData2022 = await db
+      .select({
+        year: sql<number>`2022`,
+        periodMonth: treasuryChallans.periodMonth,
+        totalAmount: sql<number>`COALESCE(SUM(${treasuryChallans.amountBdt}), 0)`,
+        challanCount: sql<number>`COUNT(*)`,
+      })
+      .from(treasuryChallans)
+      .where(eq(treasuryChallans.periodYear, 2022))
+      .groupBy(treasuryChallans.periodMonth)
+      .orderBy(treasuryChallans.periodMonth);
+
+    const treasuryData = [...treasuryData2022, ...treasuryData2025];
 
     // Get closing balance with fallback
     let closingBalanceData = 0;
@@ -83,7 +141,6 @@ async function getVATReports() {
     }
 
     return {
-      monthlyVAT,
       vatLedgerEntries,
       treasuryData,
       closingBalance: closingBalanceData,
@@ -182,89 +239,6 @@ export default async function VATReportsPage() {
               .toLocaleString()}
           </div>
           <div className="text-sm text-gray-600">This Year</div>
-        </div>
-      </div>
-
-      {/* Monthly VAT Summary */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">Monthly VAT Summary (2025)</h2>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Month
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sales Count
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gross Sales
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Net Sales (Ex-VAT)
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  VAT Payable
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.monthlyVAT.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    No sales data found for 2025
-                  </td>
-                </tr>
-              ) : (
-                data.monthlyVAT.map((month) => {
-                  const vatLedgerEntry = data.vatLedgerEntries.find(
-                    (v) => v.periodMonth === month.month
-                  );
-
-                  return (
-                    <tr key={month.month} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {monthNames[month.month - 1]} 2025
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {Number(month.salesCount).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        ৳{Number(month.grossSales).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        ৳{Number(month.netSales).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        ৳{Number(month.vatAmount).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {vatLedgerEntry ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            Computed
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
 

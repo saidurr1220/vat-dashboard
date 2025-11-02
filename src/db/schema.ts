@@ -144,7 +144,7 @@ export const vatLedger = pgTable("vat_ledger", {
     vatPayable: numeric("vat_payable").notNull(),
     usedFromClosingBalance: numeric("used_from_closing_balance").notNull().default("0"),
     treasuryNeeded: numeric("treasury_needed").notNull().default("0"),
-    locked: boolean("locked").notNull().default(true),
+    locked: boolean("locked").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow()
 }, (table) => ({
     periodUnique: unique("vat_ledger_period_unique").on(table.periodYear, table.periodMonth)

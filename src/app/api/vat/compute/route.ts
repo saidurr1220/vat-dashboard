@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
                         vatPayable: vatPayable.toString(),
                         usedFromClosingBalance: usedFromClosingBalance.toString(),
                         treasuryNeeded: treasuryNeeded.toString(),
-                        locked: true
+                        locked: false
                     })
                     .where(
                         and(
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
                     vatPayable: vatPayable.toString(),
                     usedFromClosingBalance: usedFromClosingBalance.toString(),
                     treasuryNeeded: treasuryNeeded.toString(),
-                    locked: true
+                    locked: false
                 });
             }
 

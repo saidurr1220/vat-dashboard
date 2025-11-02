@@ -64,18 +64,14 @@ async function getSaleDetails(id: string) {
     let netOfVat = 0;
     let vatAmount = 0;
 
-    if (sale.amountType === "EXCL") {
-      // VAT Exclusive: net amount is subtotal, VAT is added
-      const subtotal = linesResult.rows.reduce(
-        (sum, line) => sum + Number(line.lineTotal),
-        0
-      );
-      netOfVat = subtotal;
-      vatAmount = subtotal * 0.15;
+    if (sale.amountType === "INCL") {
+      // VAT Inclusive: extract VAT from total
+      vatAmount = (totalValue * 15) / 115;
+      netOfVat = totalValue - vatAmount;
     } else {
-      // VAT Inclusive: total includes VAT, extract VAT
-      netOfVat = (totalValue * 100) / 115;
-      vatAmount = totalValue - netOfVat;
+      // VAT Exclusive: totalValue is stored as net amount
+      netOfVat = totalValue;
+      vatAmount = totalValue * 0.15;
     }
 
     return {
@@ -84,7 +80,7 @@ async function getSaleDetails(id: string) {
       companySettings: settingsResult.rows[0] || null,
       netOfVat: netOfVat.toFixed(2),
       vatAmount: vatAmount.toFixed(2),
-      grandTotal: totalValue.toFixed(2),
+      grandTotal: (netOfVat + vatAmount).toFixed(2),
     };
   } catch (error) {
     console.error("Error fetching sale details:", error);

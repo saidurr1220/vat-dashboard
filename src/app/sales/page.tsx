@@ -43,7 +43,7 @@ async function getSales() {
     // Use stored total value as final amount - don't recalculate VAT
     return result.map((sale) => {
       const totalValue = Number(sale.totalValue);
-      const grandTotal = totalValue; // This is already the final amount including VAT
+      let grandTotal = totalValue;
 
       // Calculate VAT breakdown for display purposes only
       let vatAmount = 0;
@@ -54,9 +54,10 @@ async function getSales() {
         vatAmount = (totalValue * 15) / 115;
         netOfVat = totalValue - vatAmount;
       } else {
-        // VAT Exclusive: total already includes added VAT
-        netOfVat = totalValue / 1.15; // Back-calculate the ex-VAT amount
-        vatAmount = totalValue - netOfVat;
+        // VAT Exclusive: totalValue is stored as net amount (sum of product prices)
+        netOfVat = totalValue;
+        vatAmount = totalValue * 0.15;
+        grandTotal = totalValue + vatAmount; // Calculate gross total
       }
 
       return {

@@ -75,19 +75,28 @@ export default function VATManagePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [selectedYear, setSelectedYear] = useState(2022);
-  const [selectedMonth, setSelectedMonth] = useState(11);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    // Refetch data when year changes to get updated information
+    if (availableYears.length > 0) {
+      fetchData();
+    }
+  }, [selectedYear]);
+
   const fetchData = async () => {
     try {
-      const [vatRes, balanceRes, challanRes] = await Promise.all([
+      const [vatRes, balanceRes, challanRes, salesRes] = await Promise.all([
         fetch("/api/vat/ledger"),
         fetch("/api/vat/closing-balance"),
         fetch("/api/treasury/challans"),
+        fetch("/api/sales"),
       ]);
 
       if (vatRes.ok) {
@@ -100,6 +109,17 @@ export default function VATManagePage() {
         setClosingBalances(balanceData);
       }
 
+      if (salesRes.ok) {
+        const salesData = await salesRes.json();
+        // Extract unique years from sales data
+        const yearSet = new Set<number>();
+        salesData.forEach((sale: any) => {
+          yearSet.add(new Date(sale.dt).getFullYear());
+        });
+        const years = Array.from(yearSet).sort((a, b) => b - a);
+        setAvailableYears(years);
+      }
+
       if (challanRes.ok) {
         const challanData = await challanRes.json();
         setTreasuryChallans(challanData);
@@ -108,6 +128,36 @@ export default function VATManagePage() {
       console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAsComplete = async (year: number, month: number) => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/vat/ledger`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodYear: year,
+          periodMonth: month,
+          locked: true,
+        }),
+      });
+
+      if (response.ok) {
+        // Show success message (you can add toast notification here)
+        alert(`VAT period ${month}/${year} marked as complete!`);
+        // Refresh data
+        fetchData();
+      } else {
+        const error = await response.json();
+        alert(`Failed to mark as complete: ${error.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error marking as complete:", error);
+      alert("Failed to mark as complete. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -215,11 +265,17 @@ export default function VATManagePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[2022, 2023, 2024, 2025].map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
+                    {availableYears.length > 0
+                      ? availableYears.map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))
+                      : [2022, 2023, 2024, 2025].map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -257,6 +313,103 @@ export default function VATManagePage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Year-wise Summary */}
+        <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-purple-50 to-indigo-50">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <CardTitle className="text-xl">
+                {selectedYear} Year Summary
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-blue-700">
+                      Total VAT Entries
+                    </p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {
+                        vatEntries.filter(
+                          (entry) => entry.periodYear === selectedYear
+                        ).length
+                      }
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-green-700">
+                      Total VAT Payable
+                    </p>
+                    <p className="text-2xl font-bold text-green-900">
+                      ৳
+                      {vatEntries
+                        .filter((entry) => entry.periodYear === selectedYear)
+                        .reduce(
+                          (sum, entry) => sum + Number(entry.vatPayable),
+                          0
+                        )
+                        .toLocaleString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-orange-700">
+                      Treasury Paid
+                    </p>
+                    <p className="text-2xl font-bold text-orange-900">
+                      ৳
+                      {treasuryChallans
+                        .filter(
+                          (challan) => challan.periodYear === selectedYear
+                        )
+                        .reduce(
+                          (sum, challan) => sum + Number(challan.amountBdt),
+                          0
+                        )
+                        .toLocaleString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-purple-700">
+                      Closing Balance Used
+                    </p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      ৳
+                      {vatEntries
+                        .filter((entry) => entry.periodYear === selectedYear)
+                        .reduce(
+                          (sum, entry) =>
+                            sum + Number(entry.usedFromClosingBalance),
+                          0
+                        )
+                        .toLocaleString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>
@@ -314,12 +467,34 @@ export default function VATManagePage() {
                           </span>
                         </>
                       ) : (
-                        <>
-                          <Unlock className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm font-bold text-orange-900">
-                            Open
-                          </span>
-                        </>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <Unlock className="w-4 h-4 text-orange-600" />
+                            <span className="text-sm font-bold text-orange-900">
+                              Open
+                            </span>
+                          </div>
+                          <Button
+                            onClick={() =>
+                              markAsComplete(selectedYear, selectedMonth)
+                            }
+                            disabled={saving}
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1"
+                          >
+                            {saving ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                Completing...
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-3 h-3 mr-1" />
+                                Mark Complete
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
