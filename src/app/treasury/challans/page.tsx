@@ -116,11 +116,19 @@ export default function TreasuryChallansPage() {
 
       const method = editingChallan ? "PUT" : "POST";
 
+      console.log("Submitting treasury challan:", { url, method, payload });
+
       const response = await makeAuthenticatedRequest(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      console.log(
+        "Treasury challan response:",
+        response.status,
+        response.statusText
+      );
 
       if (response.ok) {
         showSuccess(
@@ -135,11 +143,16 @@ export default function TreasuryChallansPage() {
         fetchChallans();
       } else {
         const errorData = await response.json();
+        console.error("Treasury challan error:", errorData);
         showError("Error", errorData.error || "Failed to save challan");
       }
     } catch (error) {
       console.error("Error saving challan:", error);
-      showError("Error", "Failed to save challan");
+      showError(
+        "Error",
+        "Failed to save challan: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setSaving(false);
     }

@@ -10,6 +10,7 @@ import Link from "next/link";
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = "force-dynamic";
+export const revalidate = 0; // Always fetch fresh data
 
 async function getVATReports() {
   try {
