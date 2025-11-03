@@ -25,7 +25,9 @@ export default function AddBOEPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -45,7 +47,7 @@ export default function AddBOEPage() {
     return assessable + baseVat + sd + vat + at;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (saving) return;
