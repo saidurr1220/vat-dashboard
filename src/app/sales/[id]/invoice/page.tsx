@@ -69,9 +69,9 @@ async function getSaleDetails(id: string) {
       vatAmount = (totalValue * 15) / 115;
       netOfVat = totalValue - vatAmount;
     } else {
-      // VAT Exclusive: totalValue is stored as net amount
-      netOfVat = totalValue;
-      vatAmount = totalValue * 0.15;
+      // VAT Exclusive: totalValue is already stored as gross total (net + VAT)
+      vatAmount = (totalValue * 15) / 115;
+      netOfVat = totalValue - vatAmount;
     }
 
     return {

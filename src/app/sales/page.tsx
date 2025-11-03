@@ -54,10 +54,10 @@ async function getSales() {
         vatAmount = (totalValue * 15) / 115;
         netOfVat = totalValue - vatAmount;
       } else {
-        // VAT Exclusive: totalValue is stored as net amount (sum of product prices)
-        netOfVat = totalValue;
-        vatAmount = totalValue * 0.15;
-        grandTotal = totalValue + vatAmount; // Calculate gross total
+        // VAT Exclusive: totalValue is already stored as gross total (net + VAT)
+        // So we need to extract VAT from it, same as INCL
+        vatAmount = (totalValue * 15) / 115;
+        netOfVat = totalValue - vatAmount;
       }
 
       return {
@@ -119,11 +119,11 @@ async function getSalesStats() {
         totalVAT += vatAmount;
         totalNet += totalValue - vatAmount;
       } else {
-        // VAT Exclusive - total_value is the net amount
-        totalNet += totalValue;
-        const vatAmount = totalValue * 0.15;
+        // VAT Exclusive - total_value is already stored as gross total
+        totalGross += totalValue;
+        const vatAmount = (totalValue * 15) / 115;
         totalVAT += vatAmount;
-        totalGross += totalValue + vatAmount;
+        totalNet += totalValue - vatAmount;
       }
     });
 
