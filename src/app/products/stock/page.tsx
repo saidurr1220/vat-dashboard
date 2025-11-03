@@ -70,6 +70,13 @@ async function getStockData() {
       0
     );
 
+    // Calculate potential VAT from selling current stock at retail price
+    const potentialSalesValue = productsData.reduce(
+      (sum: number, p: any) => sum + p.stockOnHand * p.sellExVat,
+      0
+    );
+    const potentialVAT = (potentialSalesValue * 15) / 115;
+
     // Get monthly stock movement data
     const monthlyMovement = await getMonthlyStockMovement();
 
@@ -84,6 +91,7 @@ async function getStockData() {
         lowStockProducts,
         outOfStockProducts,
         totalStockValue,
+        potentialVAT,
       },
       monthlyMovement,
       topSellingProducts,
@@ -98,6 +106,7 @@ async function getStockData() {
         lowStockProducts: 0,
         outOfStockProducts: 0,
         totalStockValue: 0,
+        potentialVAT: 0,
       },
       monthlyMovement: [],
       topSellingProducts: [],
@@ -225,7 +234,7 @@ export default async function StockPage() {
       </div>
 
       {/* Stock Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -299,6 +308,26 @@ export default async function StockPage() {
                 <p className="text-xs text-purple-700">Total inventory</p>
               </div>
               <BarChart3 className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-800">
+                  Potential VAT
+                </p>
+                <p className="text-2xl font-bold text-emerald-900">
+                  ৳
+                  {stats.potentialVAT.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
+                </p>
+                <p className="text-xs text-emerald-700">From current stock</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-emerald-600" />
             </div>
           </CardContent>
         </Card>
