@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition, useDeferredValue } from "react";
 import { KPICard } from "@/components/ui/kpi-card";
 import { KPICardSkeleton } from "@/components/ui/loading-skeleton";
 import { ModernCard, ModernCardHeader } from "@/components/ui/modern-card";
@@ -53,6 +53,10 @@ export default function DashboardKPIs() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  // Defer heavy computations
+  const deferredStats = useDeferredValue(stats);
 
   const fetchStats = async (isRefresh = false) => {
     try {
@@ -61,140 +65,202 @@ export default function DashboardKPIs() {
       } else {
         setLoading(true);
       }
-      // Fetch comprehensive stats from multiple APIs
-      const [productsRes, salesRes, treasuryRes, importsRes, analyticsRes] =
-        await Promise.all([
-          fetch("/api/products?summary=true"),
-          fetch("/api/sales?summary=true"),
-          fetch("/api/treasury?summary=true"),
-          fetch("/api/imports?summary=true"),
-          fetch("/api/dashboard/analytics"),
-        ]);
 
-      const products = productsRes.ok ? await productsRes.json() : [];
-      const sales = salesRes.ok ? await salesRes.json() : [];
-      const treasury = treasuryRes.ok ? await treasuryRes.json() : [];
-      const imports = importsRes.ok ? await importsRes.json() : [];
-      const analytics = analyticsRes.ok ? await analyticsRes.json() : null;
+      // Use startTransition to prevent blocking UI
+      startTransition(async () => {
+        // Fetch comprehensive stats from multiple APIs with timeout
+        const fetchWithTimeout = (url: string, timeout = 5000) => {
+          return Promise.race([
+            fetch(url, { cache: "no-store" }),
+            new Promise<Response>((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout")), timeout)
+            ),
+          ]);
+        };
 
-      // Calculate stats client-side
-      const totalProducts = Array.isArray(products) ? products.length : 0;
-      const categories = Array.isArray(products)
-        ? products.reduce((acc: any, p: any) => {
-            const cat = p.category || "General";
-            acc[cat] = (acc[cat] || 0) + 1;
-            return acc;
-          }, {})
-        : {};
+        const [productsRes, salesRes, treasuryRes, importsRes, analyticsRes] =
+          await Promise.allSettled([
+            fetchWithTimeout("/api/products?summary=true"),
+            fetchWithTimeout("/api/sales?summary=true"),
+            fetchWithTimeout("/api/treasury?summary=true"),
+            fetchWithTimeout("/api/imports?summary=true"),
+            fetchWithTimeout("/api/dashboard/analytics"),
+          ]);
 
-      const categoryArray = Object.entries(categories).map(
-        ([category, count]) => ({
-          category,
-          count: count as number,
-        })
-      );
+        const products =
+          productsRes.status === "fulfilled" && productsRes.value.ok
+            ? await productsRes.value.json()
+            : [];
+        const sales =
+          salesRes.status === "fulfilled" && salesRes.value.ok
+            ? await salesRes.value.json()
+            : [];
+        const treasury =
+          treasuryRes.status === "fulfilled" && treasuryRes.value.ok
+            ? await treasuryRes.value.json()
+            : [];
+        const imports =
+          importsRes.status === "fulfilled" && importsRes.value.ok
+            ? await importsRes.value.json()
+            : [];
+        const analytics =
+          analyticsRes.status === "fulfilled" && analyticsRes.value.ok
+            ? await analyticsRes.value.json()
+            : null;
 
-      const totalSales = Array.isArray(sales)
-        ? sales.reduce(
-            (sum: number, s: any) => sum + Number(s.totalValue || 0),
-            0
-          )
-        : 0;
+        // Calculate stats client-side
+        const totalProducts = Array.isArray(products) ? products.length : 0;
+        const categories = Array.isArray(products)
+          ? products.reduce((acc: any, p: any) => {
+              const cat = p.category || "General";
+              acc[cat] = (acc[cat] || 0) + 1;
+              return acc;
+            }, {})
+          : {};
 
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-      const monthlySalesData = Array.isArray(sales)
-        ? sales.filter((s: any) => {
-            const saleDate = new Date(s.dt);
-            return (
-              saleDate.getMonth() + 1 === currentMonth &&
-              saleDate.getFullYear() === currentYear
-            );
+        const categoryArray = Object.entries(categories).map(
+          ([category, count]) => ({
+            category,
+            count: count as number,
           })
-        : [];
+        );
 
-      const monthlySales = monthlySalesData.reduce(
-        (sum: number, s: any) => sum + Number(s.totalValue || 0),
-        0
-      );
+        const totalSales = Array.isArray(sales)
+          ? sales.reduce(
+              (sum: number, s: any) => sum + Number(s.totalValue || 0),
+              0
+            )
+          : 0;
 
-      // Calculate VAT data - gross VAT from sales
-      const grossVatPayable = Array.isArray(sales)
-        ? sales.reduce((sum: number, s: any) => {
-            const totalValue = Number(s.totalValue || 0);
-            if (s.amountType === "INCL") {
-              return sum + (totalValue - totalValue / 1.15);
-            } else {
-              return sum + totalValue * 0.15;
-            }
-          }, 0)
-        : 0;
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        const monthlySalesData = Array.isArray(sales)
+          ? sales.filter((s: any) => {
+              const saleDate = new Date(s.dt);
+              return (
+                saleDate.getMonth() + 1 === currentMonth &&
+                saleDate.getFullYear() === currentYear
+              );
+            })
+          : [];
 
-      // Treasury data - API returns amount_bdt (snake_case)
-      const totalTreasuryPaid = Array.isArray(treasury)
-        ? treasury.reduce(
-            (sum: number, t: any) => sum + Number(t.amount_bdt || 0),
-            0
-          )
-        : 0;
+        const monthlySales = monthlySalesData.reduce(
+          (sum: number, s: any) => sum + Number(s.totalValue || 0),
+          0
+        );
 
-      // Import data
-      const totalVatPaid = Array.isArray(imports)
-        ? imports.reduce((sum: number, i: any) => sum + Number(i.vat || 0), 0)
-        : 0;
+        // Calculate VAT data - gross VAT from sales
+        const grossVatPayable = Array.isArray(sales)
+          ? sales.reduce((sum: number, s: any) => {
+              const totalValue = Number(s.totalValue || 0);
+              if (s.amountType === "INCL") {
+                return sum + (totalValue - totalValue / 1.15);
+              } else {
+                return sum + totalValue * 0.15;
+              }
+            }, 0)
+          : 0;
 
-      const totalAtPaid = Array.isArray(imports)
-        ? imports.reduce((sum: number, i: any) => sum + Number(i.at || 0), 0)
-        : 0;
+        // Treasury data - API returns amount_bdt (snake_case)
+        const totalTreasuryPaid = Array.isArray(treasury)
+          ? treasury.reduce(
+              (sum: number, t: any) => sum + Number(t.amount_bdt || 0),
+              0
+            )
+          : 0;
 
-      // Calculate closing balance (Import AT + VAT goes here)
-      const closingBalanceAmount = totalVatPaid + totalAtPaid;
+        // Import data
+        const totalVatPaid = Array.isArray(imports)
+          ? imports.reduce((sum: number, i: any) => sum + Number(i.vat || 0), 0)
+          : 0;
 
-      // Net VAT payable after closing balance adjustment
-      const netVatPayable = Math.max(0, grossVatPayable - closingBalanceAmount);
+        const totalAtPaid = Array.isArray(imports)
+          ? imports.reduce((sum: number, i: any) => sum + Number(i.at || 0), 0)
+          : 0;
 
-      // Outstanding VAT after treasury payments
-      const outstandingVat = Math.max(0, netVatPayable - totalTreasuryPaid);
+        // Calculate closing balance (Import AT + VAT goes here)
+        const closingBalanceAmount = totalVatPaid + totalAtPaid;
 
-      // Use analytics data if available, otherwise fallback to basic calculations
-      const salesTrends = analytics?.monthlySales?.slice(0, 6).reverse() || [];
+        // Net VAT payable after closing balance adjustment
+        const netVatPayable = Math.max(
+          0,
+          grossVatPayable - closingBalanceAmount
+        );
 
-      // Get top products from analytics or create sample data based on actual products
-      let topProducts = analytics?.topProducts || [];
-      if (topProducts.length === 0 && Array.isArray(products)) {
-        // Create sample data based on actual products
-        topProducts = products.slice(0, 5).map((p: any, index: number) => ({
-          name: p.name || `Product ${index + 1}`,
-          sales: Math.random() * 200000 + 50000, // Random sales between 50K-250K
-          quantity: Math.floor(Math.random() * 30) + 5, // Random quantity 5-35
-        }));
-      }
+        // Outstanding VAT after treasury payments
+        const outstandingVat = Math.max(0, netVatPayable - totalTreasuryPaid);
 
-      const recentSales = analytics?.recentSales || [];
+        // Use analytics data if available, otherwise fallback to basic calculations
+        const salesTrends =
+          analytics?.monthlySales?.slice(0, 6).reverse() || [];
 
-      setStats({
-        totalProducts,
-        totalSales,
-        totalSalesCount: Array.isArray(sales) ? sales.length : 0,
-        monthlySales,
-        monthlySalesCount: monthlySalesData.length,
-        categories: categoryArray,
-        vatData: {
-          totalVatPaid,
-          totalVatPayable: netVatPayable, // Use net VAT payable after closing balance
-          totalAtPaid,
-          totalImports: Array.isArray(imports) ? imports.length : 0,
-          grossVatPayable, // Keep gross for reference
-          closingBalanceAmount,
-          outstandingVat,
-        },
-        treasuryData: {
-          totalPaid: totalTreasuryPaid,
-          challanCount: Array.isArray(treasury) ? treasury.length : 0,
-        },
-        salesTrends,
-        topProducts,
-        recentSales,
+        // Get top products from analytics or create sample data based on actual products
+        let topProducts = analytics?.topProducts || [];
+        if (topProducts.length === 0 && Array.isArray(products)) {
+          // Create sample data based on actual products
+          topProducts = products.slice(0, 5).map((p: any, index: number) => ({
+            name: p.name || `Product ${index + 1}`,
+            sales: Math.random() * 200000 + 50000, // Random sales between 50K-250K
+            quantity: Math.floor(Math.random() * 30) + 5, // Random quantity 5-35
+          }));
+        }
+
+        const recentSales = analytics?.recentSales || [];
+
+        // Use requestIdleCallback for non-urgent state updates
+        if ("requestIdleCallback" in window) {
+          requestIdleCallback(() => {
+            setStats({
+              totalProducts,
+              totalSales,
+              totalSalesCount: Array.isArray(sales) ? sales.length : 0,
+              monthlySales,
+              monthlySalesCount: monthlySalesData.length,
+              categories: categoryArray,
+              vatData: {
+                totalVatPaid,
+                totalVatPayable: netVatPayable, // Use net VAT payable after closing balance
+                totalAtPaid,
+                totalImports: Array.isArray(imports) ? imports.length : 0,
+                grossVatPayable, // Keep gross for reference
+                closingBalanceAmount,
+                outstandingVat,
+              },
+              treasuryData: {
+                totalPaid: totalTreasuryPaid,
+                challanCount: Array.isArray(treasury) ? treasury.length : 0,
+              },
+              salesTrends,
+              topProducts,
+              recentSales,
+            });
+          });
+        } else {
+          setStats({
+            totalProducts,
+            totalSales,
+            totalSalesCount: Array.isArray(sales) ? sales.length : 0,
+            monthlySales,
+            monthlySalesCount: monthlySalesData.length,
+            categories: categoryArray,
+            vatData: {
+              totalVatPaid,
+              totalVatPayable: netVatPayable,
+              totalAtPaid,
+              totalImports: Array.isArray(imports) ? imports.length : 0,
+              grossVatPayable,
+              closingBalanceAmount,
+              outstandingVat,
+            },
+            treasuryData: {
+              totalPaid: totalTreasuryPaid,
+              challanCount: Array.isArray(treasury) ? treasury.length : 0,
+            },
+            salesTrends,
+            topProducts,
+            recentSales,
+          });
+        }
       });
     } catch (error) {
       console.error("Failed to fetch dashboard stats:", error);
@@ -278,24 +344,28 @@ export default function DashboardKPIs() {
     return null;
   }
 
-  // Prepare chart data
-  const categoryChartData = stats.categories.map((cat, index) => ({
-    label: cat.category,
-    value: cat.count,
-    color: ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#6b7280"][
-      index % 6
-    ],
-  }));
+  // Prepare chart data using deferred stats for better performance
+  const categoryChartData = (deferredStats || stats)?.categories.map(
+    (cat, index) => ({
+      label: cat.category,
+      value: cat.count,
+      color: ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#6b7280"][
+        index % 6
+      ],
+    })
+  );
 
   // Sales trend chart data
-  const salesTrendData = stats.salesTrends.map((trend, index) => ({
-    label: trend.month,
-    value: trend.sales,
-    color: "#3b82f6",
-  }));
+  const salesTrendData = (deferredStats || stats)?.salesTrends.map(
+    (trend, index) => ({
+      label: trend.month,
+      value: trend.sales,
+      color: "#3b82f6",
+    })
+  );
 
   // Top products chart data
-  const topProductsData = stats.topProducts
+  const topProductsData = (deferredStats || stats)?.topProducts
     .slice(0, 5)
     .map((product, index) => ({
       label: product.name,
