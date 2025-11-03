@@ -26,6 +26,7 @@ import {
   LogOut,
   User,
   Download,
+  Database,
 } from "lucide-react";
 
 const navigation = [
@@ -41,6 +42,7 @@ const navigation = [
   { name: "VAT Management", href: "/vat-management", icon: Scale },
   { name: "Comprehensive Reports", href: "/vat/reports", icon: Download },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },
+  { name: "Backup & Restore", href: "/admin/backup", icon: Database },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

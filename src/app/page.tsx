@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ModernCard, ModernCardHeader } from "@/components/ui/modern-card";
 import {
   Calculator,
@@ -16,6 +15,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import DashboardKPIs from "@/components/DashboardKPIs";
+import DashboardHeader from "@/components/DashboardHeader";
+import DashboardErrorBoundary from "@/components/DashboardErrorBoundary";
 
 // Use static generation for better performance
 export const dynamic = "force-static";
@@ -73,34 +74,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Business Dashboard
-                </h1>
-                <p className="text-gray-600 text-sm">M S RAHMAN TRADERS</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="gap-2 text-xs">
-                <Calendar className="w-3 h-3" />
-                November 2025
-              </Badge>
-              <Badge className="gap-2 bg-green-600 text-xs">
-                <CheckCircle className="w-3 h-3" />
-                Active
-              </Badge>
-            </div>
-          </div>
-        </div>
+        <DashboardHeader />
 
         {/* Dynamic KPI Cards - Load via client component */}
-        <DashboardKPIs />
+        <DashboardErrorBoundary>
+          <DashboardKPIs />
+        </DashboardErrorBoundary>
 
         {/* Quick Stats Overview */}
         <div className="mb-6">

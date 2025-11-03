@@ -104,13 +104,12 @@ export default function ImportsPage() {
   const [importsData, setImportsData] = useState<BOERecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BOERecord | null>(null);
   const [formData, setFormData] = useState<BOEFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchImports = useCallback(async () => {
+  const fetchImports = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/imports");
@@ -126,24 +125,20 @@ export default function ImportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  };
 
   useEffect(() => {
     fetchImports();
   }, []);
 
-  const handleInputChange = useCallback(
-    (field: keyof BOEFormData, value: string) => {
-      console.log(`Input change: ${field} = ${value}`);
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
+  const handleInputChange = (field: keyof BOEFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setFormData(initialFormData);
     setEditingRecord(null);
-  }, []);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +171,6 @@ export default function ImportsPage() {
           body: JSON.stringify(payload),
         });
       } else {
-        console.log("Manual add payload:", payload);
         response = await fetch("/api/imports/single", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -184,10 +178,8 @@ export default function ImportsPage() {
         });
       }
 
-      console.log("Response status:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log("Error response:", errorText);
       }
 
       if (response.ok) {
@@ -198,7 +190,6 @@ export default function ImportsPage() {
             : "BOE record created successfully"
         );
         resetForm();
-        setIsAddDialogOpen(false);
         setIsEditDialogOpen(false);
         fetchImports();
       } else {
@@ -287,11 +278,7 @@ export default function ImportsPage() {
         </DialogDescription>
       </DialogHeader>
 
-      <form
-        key={editingRecord?.id || "new"}
-        onSubmit={handleSubmit}
-        className="space-y-6"
-      >
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -453,7 +440,6 @@ export default function ImportsPage() {
             variant="outline"
             onClick={() => {
               resetForm();
-              setIsAddDialogOpen(false);
               setIsEditDialogOpen(false);
             }}
           >
@@ -518,18 +504,12 @@ export default function ImportsPage() {
               </div>
 
               <div className="flex gap-2">
-                <Dialog
-                  open={isAddDialogOpen}
-                  onOpenChange={setIsAddDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add BOE Record
-                    </Button>
-                  </DialogTrigger>
-                  <FormDialog />
-                </Dialog>
+                <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+                  <Link href="/imports/add">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add BOE Record
+                  </Link>
+                </Button>
 
                 <Button variant="outline" asChild>
                   <Link href="/imports/upload">
@@ -661,18 +641,12 @@ export default function ImportsPage() {
                     ? "No records match your search criteria."
                     : "Start by adding your first BOE record."}
                 </p>
-                <Dialog
-                  open={isAddDialogOpen}
-                  onOpenChange={setIsAddDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add First BOE Record
-                    </Button>
-                  </DialogTrigger>
-                  <FormDialog />
-                </Dialog>
+                <Button asChild>
+                  <Link href="/imports/add">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First BOE Record
+                  </Link>
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
