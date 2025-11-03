@@ -9,24 +9,9 @@ export async function GET() {
             SELECT 
                 EXTRACT(YEAR FROM dt) as year,
                 EXTRACT(MONTH FROM dt) as month,
-                COALESCE(SUM(
-                    CASE 
-                        WHEN amount_type = 'INCL' THEN total_value
-                        ELSE total_value * 1.15
-                    END
-                ), 0) as total_gross,
-                COALESCE(SUM(
-                    CASE 
-                        WHEN amount_type = 'INCL' THEN total_value * 0.15 / 1.15
-                        ELSE total_value * 0.15
-                    END
-                ), 0) as total_vat,
-                COALESCE(SUM(
-                    CASE 
-                        WHEN amount_type = 'INCL' THEN total_value - (total_value * 0.15 / 1.15)
-                        ELSE total_value
-                    END
-                ), 0) as total_net,
+                COALESCE(SUM(total_value), 0) as total_gross,
+                COALESCE(SUM((total_value * 15) / 115), 0) as total_vat,
+                COALESCE(SUM(total_value - (total_value * 15) / 115), 0) as total_net,
                 COUNT(*) as invoice_count
             FROM sales 
             WHERE dt >= '2022-10-01'
