@@ -44,6 +44,11 @@ const navigation = [
   { name: "Imports (BoE)", href: "/imports", icon: FileText },
   { name: "Treasury", href: "/treasury", icon: Banknote },
   {
+    name: "VAT Register 6.1",
+    href: "/reports/vat-register-6-1",
+    icon: FileText,
+  },
+  {
     name: "Sale Register 6.2",
     href: "/reports/sale-register-6-2",
     icon: BarChart3,
