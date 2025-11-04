@@ -8,7 +8,9 @@ import {
   DollarSign,
   ShoppingCart,
   ArrowRight,
-  AlertCircle,
+  FileText,
+  Users,
+  BarChart3,
 } from "lucide-react";
 import DashboardKPIs from "@/components/DashboardKPIs";
 import DashboardHeader from "@/components/DashboardHeader";
@@ -25,153 +27,181 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <DashboardHeader />
-
-        {/* VAT Reminder - Moved to top */}
-        <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-lg p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-amber-900 mb-1">
-                Monthly VAT Reminder
-              </h4>
-              <p className="text-sm text-amber-800">
-                Submit your VAT returns by the{" "}
-                <strong>15th of each month</strong>. Current period:{" "}
-                <strong>{currentMonth}</strong>
-              </p>
-            </div>
-            <Link href="/vat/monthly">
-              <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
-                <Calculator className="w-4 h-4 mr-2" />
-                Calculate Now
-              </Button>
-            </Link>
-          </div>
-        </div>
 
         {/* Main KPI Cards */}
         <DashboardErrorBoundary>
           <DashboardKPIs />
         </DashboardErrorBoundary>
 
-        {/* Quick Actions */}
-        <div className="mt-6 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/sales/new">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                <span className="text-sm font-medium">New Sale</span>
+        {/* Quick Actions Grid */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/sales/new" className="group">
+            <div className="bg-white rounded-lg p-6 border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                  <ShoppingCart className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">New Sale</h3>
+              <p className="text-sm text-gray-500">Create sales invoice</p>
+            </div>
+          </Link>
+
+          <Link href="/customers" className="group">
+            <div className="bg-white rounded-lg p-6 border border-gray-200 hover:border-purple-500 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+                  <Users className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Customers</h3>
+              <p className="text-sm text-gray-500">Manage customers</p>
+            </div>
+          </Link>
+
+          <Link href="/products" className="group">
+            <div className="bg-white rounded-lg p-6 border border-gray-200 hover:border-orange-500 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                  <Package className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Products</h3>
+              <p className="text-sm text-gray-500">Inventory management</p>
+            </div>
+          </Link>
+
+          <Link href="/treasury" className="group">
+            <div className="bg-white rounded-lg p-6 border border-gray-200 hover:border-green-500 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                  <Banknote className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Treasury</h3>
+              <p className="text-sm text-gray-500">VAT payments</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* VAT Reports Section */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">VAT Reports</h2>
+            <Link href="/vat/reports">
+              <Button variant="ghost" size="sm" className="gap-2">
+                View All
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <Link href="/vat/monthly">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 hover:border-purple-600 hover:text-purple-600"
-              >
-                <Calculator className="w-6 h-6" />
-                <span className="text-sm font-medium">Monthly VAT</span>
-              </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href="/reports/vat-register-6-1" className="group">
+              <div className="bg-white rounded-lg p-5 border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <h3 className="font-semibold text-gray-900">
+                        Mushok 6.1
+                      </h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Purchase Register - Imports
+                    </p>
+                    <div className="text-xs text-blue-600 font-medium">
+                      View Report →
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Link>
-            <Link href="/products/stock">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 hover:border-orange-600 hover:text-orange-600"
-              >
-                <Package className="w-6 h-6" />
-                <span className="text-sm font-medium">Stock</span>
-              </Button>
+
+            <Link href="/reports/sale-register-6-2" className="group">
+              <div className="bg-white rounded-lg p-5 border border-gray-200 hover:border-purple-500 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BarChart3 className="w-5 h-5 text-purple-600" />
+                      <h3 className="font-semibold text-gray-900">
+                        Mushok 6.2
+                      </h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">Sales Register</p>
+                    <div className="text-xs text-purple-600 font-medium">
+                      View Report →
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Link>
-            <Link href="/imports/add">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 hover:bg-green-50 hover:border-green-600 hover:text-green-600"
-              >
-                <DollarSign className="w-6 h-6" />
-                <span className="text-sm font-medium">Add BOE</span>
-              </Button>
+
+            <Link href="/reports/mushok-6-10" className="group">
+              <div className="bg-white rounded-lg p-5 border border-gray-200 hover:border-orange-500 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-5 h-5 text-orange-600" />
+                      <h3 className="font-semibold text-gray-900">
+                        Mushok 6.10
+                      </h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">
+                      High Value Transactions
+                    </p>
+                    <div className="text-xs text-orange-600 font-medium">
+                      View Report →
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Link>
           </div>
         </div>
 
-        {/* Important Links - Modernized */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link
-            href="/vat/closing-balance"
-            className="group relative overflow-hidden"
-          >
-            <div className="bg-white rounded-xl p-6 border-2 border-green-200 hover:border-green-400 shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform"></div>
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
-                  <Banknote className="w-7 h-7 text-white" />
+        {/* VAT Management Section */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/vat/monthly" className="group">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Calculator className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">
-                  Closing Balance
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Manage VAT closing balance
-                </p>
-                <div className="flex items-center text-green-600 font-medium text-sm group-hover:gap-2 transition-all">
-                  <span>View Details</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+              <h3 className="font-bold text-xl mb-2">Monthly VAT</h3>
+              <p className="text-blue-100 text-sm mb-4">
+                Calculate and submit VAT returns
+              </p>
+              <div className="text-xs bg-white/20 rounded px-2 py-1 inline-block">
+                Current Period: {currentMonth}
               </div>
             </div>
           </Link>
 
-          <Link href="/treasury" className="group relative overflow-hidden">
-            <div className="bg-white rounded-xl p-6 border-2 border-blue-200 hover:border-blue-400 shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform"></div>
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
-                  <TrendingUp className="w-7 h-7 text-white" />
+          <Link href="/vat/closing-balance" className="group">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">
-                  Treasury
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Manage treasury challans
-                </p>
-                <div className="flex items-center text-blue-600 font-medium text-sm group-hover:gap-2 transition-all">
-                  <span>View Details</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/vat-management"
-            className="group relative overflow-hidden"
-          >
-            <div className="bg-white rounded-xl p-6 border-2 border-purple-200 hover:border-purple-400 shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-violet-100 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform"></div>
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
-                  <Calculator className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">
-                  VAT Reports
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  View comprehensive reports
-                </p>
-                <div className="flex items-center text-purple-600 font-medium text-sm group-hover:gap-2 transition-all">
-                  <span>View Details</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+              <h3 className="font-bold text-xl mb-2">Closing Balance</h3>
+              <p className="text-green-100 text-sm mb-4">
+                Manage VAT closing balance
+              </p>
+              <div className="text-xs bg-white/20 rounded px-2 py-1 inline-block">
+                Track Balance
               </div>
             </div>
           </Link>

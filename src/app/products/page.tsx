@@ -46,6 +46,12 @@ export default function ProductsPage() {
                   Stock Management
                 </Button>
               </Link>
+              <Link href="/products/stock/adjust">
+                <Button variant="outline" className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Stock Adjust
+                </Button>
+              </Link>
               <Link href="/products/new">
                 <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4" />
