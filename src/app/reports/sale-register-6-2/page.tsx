@@ -265,6 +265,21 @@ export default async function SaleRegister62Page({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
+                  {movements.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center">
+                        <div className="text-gray-500">
+                          <Package className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                          <p className="font-medium">
+                            No stock movement data for {monthName}
+                          </p>
+                          <p className="text-sm mt-1">
+                            Add products and make sales to see stock movements
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
                   {Object.entries(groupedByCategory).map(
                     ([category, items]) => (
                       <>

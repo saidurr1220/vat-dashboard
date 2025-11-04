@@ -319,6 +319,21 @@ export default async function VATRegister61Page({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
+                      {data.purchases.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center">
+                            <div className="text-gray-500">
+                              <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                              <p className="font-medium">
+                                No purchase records found for {monthName}
+                              </p>
+                              <p className="text-sm mt-1">
+                                Import some BOE records to see them here
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
                       {data.purchases.map((purchase, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -410,6 +425,22 @@ export default async function VATRegister61Page({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
+                      {data.sales.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center">
+                            <div className="text-gray-500">
+                              <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                              <p className="font-medium">
+                                No sales above ৳2 Lakh found for {monthName}
+                              </p>
+                              <p className="text-sm mt-1">
+                                Only sales above ৳2,00,000 are shown here (VAT
+                                applicable)
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
                       {data.sales.map((sale, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
