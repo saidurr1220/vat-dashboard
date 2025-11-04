@@ -23,13 +23,13 @@ export default function MonthlyStockAnalysis() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("/api/dashboard/analytics");
+        const response = await fetch("/api/dashboard/stock-analysis");
         if (response.ok) {
           const result = await response.json();
           setData(result);
         }
       } catch (error) {
-        console.error("Failed to load analytics:", error);
+        console.error("Failed to load stock analysis:", error);
       } finally {
         setLoading(false);
       }
