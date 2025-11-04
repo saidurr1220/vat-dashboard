@@ -32,14 +32,22 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Sales", href: "/sales", icon: ShoppingCart },
-
   { name: "Monthly Bulk Sale", href: "/sales/monthly", icon: Wallet },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Products & Stock", href: "/products", icon: Package },
+  {
+    name: "Stock-Import Check",
+    href: "/products/stock-import-mismatch",
+    icon: FileText,
+  },
   { name: "Footwear System", href: "/footwear", icon: Package },
   { name: "Imports (BoE)", href: "/imports", icon: FileText },
   { name: "Treasury", href: "/treasury", icon: Banknote },
-  { name: "VAT Management", href: "/vat-management", icon: Scale },
+  {
+    name: "Sale Register 6.2",
+    href: "/reports/sale-register-6-2",
+    icon: BarChart3,
+  },
   { name: "Comprehensive Reports", href: "/vat/reports", icon: Download },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },
   { name: "Backup & Restore", href: "/admin/backup", icon: Database },
