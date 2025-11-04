@@ -35,17 +35,17 @@ const navigation = [
   { name: "Monthly Bulk Sale", href: "/sales/monthly", icon: Wallet },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Products & Stock", href: "/products", icon: Package },
-  {
-    name: "Stock-Import Check",
-    href: "/products/stock-import-mismatch",
-    icon: FileText,
-  },
   { name: "Footwear System", href: "/footwear", icon: Package },
   { name: "Treasury", href: "/treasury", icon: Banknote },
   {
     name: "VAT Register 6.1",
     href: "/reports/vat-register-6-1",
     icon: FileText,
+  },
+  {
+    name: "Stock-Import Mismatch",
+    href: "/products/stock-import-mismatch",
+    icon: Scale,
   },
   {
     name: "Sale Register 6.2",
