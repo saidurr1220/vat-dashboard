@@ -47,16 +47,16 @@ export default function MonthlyStockAnalysis() {
   }
 
   // Use safe defaults if data is missing
-  const safeData = data || {
-    totalUnitsSold: 0,
-    totalRevenue: 0,
-    avgMonthlySales: 0,
+  const safeData = {
+    totalUnitsSold: data?.totalUnitsSold || 0,
+    totalRevenue: data?.totalRevenue || 0,
+    avgMonthlySales: data?.avgMonthlySales || 0,
     currentMonth: {
-      units: 0,
-      revenue: 0,
-      avgPerSale: 0,
-      transactions: 0,
-      products: 0,
+      units: data?.currentMonth?.units || 0,
+      revenue: data?.currentMonth?.revenue || 0,
+      avgPerSale: data?.currentMonth?.avgPerSale || 0,
+      transactions: data?.currentMonth?.transactions || 0,
+      products: data?.currentMonth?.products || 0,
     },
   };
 
@@ -83,7 +83,7 @@ export default function MonthlyStockAnalysis() {
         <div className="grid grid-cols-3 gap-6 mb-6">
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900">
-              {(safeData.totalUnitsSold || 0).toLocaleString()}
+              {safeData.totalUnitsSold.toLocaleString()}
             </div>
             <div className="text-sm text-blue-600 font-medium mt-1">
               Total Units Sold
@@ -91,7 +91,7 @@ export default function MonthlyStockAnalysis() {
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900">
-              ৳{((safeData.totalRevenue || 0) / 1000000).toFixed(1)}M
+              ৳{(safeData.totalRevenue / 1000000).toFixed(1)}M
             </div>
             <div className="text-sm text-blue-600 font-medium mt-1">
               Total Revenue
@@ -99,7 +99,7 @@ export default function MonthlyStockAnalysis() {
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900">
-              {(safeData.avgMonthlySales || 0).toLocaleString()}
+              {safeData.avgMonthlySales.toLocaleString()}
             </div>
             <div className="text-sm text-blue-600 font-medium mt-1">
               Avg Monthly Sales
@@ -117,8 +117,8 @@ export default function MonthlyStockAnalysis() {
               <div>
                 <h3 className="font-semibold text-gray-900">{monthName}</h3>
                 <p className="text-xs text-gray-600">
-                  {safeData.currentMonth.transactions || 0} transactions •{" "}
-                  {safeData.currentMonth.products || 0} different products
+                  {safeData.currentMonth.transactions} transactions •{" "}
+                  {safeData.currentMonth.products} different products
                 </p>
               </div>
             </div>
@@ -126,15 +126,14 @@ export default function MonthlyStockAnalysis() {
               <div className="flex items-center gap-1 text-red-600 font-semibold">
                 <TrendingDown className="w-4 h-4" />
                 <span className="text-lg">
-                  {(safeData.currentMonth.units || 0).toLocaleString()} units
+                  {safeData.currentMonth.units.toLocaleString()} units
                 </span>
               </div>
               <div className="text-xs text-gray-600">
-                ৳{(safeData.currentMonth.revenue || 0).toLocaleString()} revenue
+                ৳{safeData.currentMonth.revenue.toLocaleString()} revenue
               </div>
               <div className="text-xs text-blue-600 font-medium">
-                Avg: ৳{(safeData.currentMonth.avgPerSale || 0).toLocaleString()}
-                /sale
+                Avg: ৳{safeData.currentMonth.avgPerSale.toLocaleString()}/sale
               </div>
             </div>
           </div>
