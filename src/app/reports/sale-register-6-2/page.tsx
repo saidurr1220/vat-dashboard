@@ -27,77 +27,93 @@ async function getSaleRegisterData(month?: string, year?: string) {
     const targetMonth = month || (currentDate.getMonth() + 1).toString();
     const targetYear = year || currentDate.getFullYear().toString();
 
-    // Get stock movements for the month
+    // Simplified query - just show current stock and sales for the month
     const result = await db.execute(sql`
-      WITH monthly_data AS (
-        SELECT 
-          p.id as product_id,
-          p.name as product_name,
-          p.category,
-          p.sell_ex_vat as unit_price,
-          
-          -- Opening stock (stock at beginning of month)
-          COALESCE((
-            SELECT SUM(
-              CASE 
-                WHEN sl.transaction_type = 'PURCHASE' THEN CAST(sl.qty AS NUMERIC)
-                WHEN sl.transaction_type = 'SALE' THEN -CAST(sl.qty AS NUMERIC)
-                WHEN sl.transaction_type = 'ADJUSTMENT' THEN CAST(sl.qty AS NUMERIC)
-                ELSE 0
-              END
-            )
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-            AND sl.transaction_date < DATE_TRUNC('month', TO_DATE(${targetYear} || '-' || ${targetMonth} || '-01', 'YYYY-MM-DD'))
-          ), 0) as opening_stock,
-          
-          -- Purchases during month
-          COALESCE((
-            SELECT SUM(CAST(sl.qty AS NUMERIC))
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-            AND sl.transaction_type = 'PURCHASE'
-            AND DATE_TRUNC('month', sl.transaction_date) = DATE_TRUNC('month', TO_DATE(${targetYear} || '-' || ${targetMonth} || '-01', 'YYYY-MM-DD'))
-          ), 0) as purchases,
-          
-          -- Sales during month
-          COALESCE((
-            SELECT SUM(CAST(slines.qty AS NUMERIC))
-            FROM sales_lines slines
-            JOIN sales s ON slines.sale_id = s.id
-            WHERE slines.product_id = p.id
-            AND DATE_TRUNC('month', s.dt) = DATE_TRUNC('month', TO_DATE(${targetYear} || '-' || ${targetMonth} || '-01', 'YYYY-MM-DD'))
-          ), 0) as sales
-          
-        FROM products p
-        WHERE p.stock_on_hand > 0 
-           OR EXISTS (
-             SELECT 1 FROM stock_ledger sl 
-             WHERE sl.product_id = p.id 
-             AND DATE_TRUNC('month', sl.transaction_date) = DATE_TRUNC('month', TO_DATE(${targetYear} || '-' || ${targetMonth} || '-01', 'YYYY-MM-DD'))
-           )
-           OR EXISTS (
-             SELECT 1 FROM sales_lines slines
-             JOIN sales s ON slines.sale_id = s.id
-             WHERE slines.product_id = p.id
-             AND DATE_TRUNC('month', s.dt) = DATE_TRUNC('month', TO_DATE(${targetYear} || '-' || ${targetMonth} || '-01', 'YYYY-MM-DD'))
-           )
-      )
       SELECT 
-        product_id,
-        product_name,
-        category,
-        opening_stock,
-        purchases,
-        sales,
-        (opening_stock + purchases - sales) as closing_stock,
-        unit_price,
-        (opening_stock * unit_price) as opening_value,
-        (purchases * unit_price) as purchase_value,
-        (sales * unit_price) as sales_value,
-        ((opening_stock + purchases - sales) * unit_price) as closing_value
-      FROM monthly_data
-      WHERE opening_stock != 0 OR purchases != 0 OR sales != 0
+        p.id as product_id,
+        p.name as product_name,
+        COALESCE(p.category, 'General') as category,
+        p.stock_on_hand as closing_stock,
+        p.sell_ex_vat as unit_price,
+        
+        -- Sales during month
+        COALESCE((
+          SELECT SUM(CAST(slines.qty AS NUMERIC))
+          FROM sales_lines slines
+          JOIN sales s ON slines.sale_id = s.id
+          WHERE slines.product_id = p.id
+          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
+        ), 0) as sales,
+        
+        -- Purchases from imports (BOE) during month
+        COALESCE((
+          SELECT SUM(CAST(ib.qty AS NUMERIC))
+          FROM imports_boe ib
+          WHERE p.boe_no = ib.boe_no
+          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
+        ), 0) as purchases,
+        
+        -- Calculate opening stock (closing + sales - purchases)
+        (p.stock_on_hand + COALESCE((
+          SELECT SUM(CAST(slines.qty AS NUMERIC))
+          FROM sales_lines slines
+          JOIN sales s ON slines.sale_id = s.id
+          WHERE slines.product_id = p.id
+          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
+        ), 0) - COALESCE((
+          SELECT SUM(CAST(ib.qty AS NUMERIC))
+          FROM imports_boe ib
+          WHERE p.boe_no = ib.boe_no
+          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
+        ), 0)) as opening_stock,
+        
+        -- Values
+        (p.stock_on_hand * p.sell_ex_vat) as closing_value,
+        ((p.stock_on_hand + COALESCE((
+          SELECT SUM(CAST(slines.qty AS NUMERIC))
+          FROM sales_lines slines
+          JOIN sales s ON slines.sale_id = s.id
+          WHERE slines.product_id = p.id
+          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
+        ), 0) - COALESCE((
+          SELECT SUM(CAST(ib.qty AS NUMERIC))
+          FROM imports_boe ib
+          WHERE p.boe_no = ib.boe_no
+          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
+        ), 0)) * p.sell_ex_vat) as opening_value,
+        
+        (COALESCE((
+          SELECT SUM(CAST(ib.qty AS NUMERIC))
+          FROM imports_boe ib
+          WHERE p.boe_no = ib.boe_no
+          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
+        ), 0) * p.sell_ex_vat) as purchase_value,
+        
+        (COALESCE((
+          SELECT SUM(CAST(slines.qty AS NUMERIC))
+          FROM sales_lines slines
+          JOIN sales s ON slines.sale_id = s.id
+          WHERE slines.product_id = p.id
+          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
+          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
+        ), 0) * p.sell_ex_vat) as sales_value
+        
+      FROM products p
+      WHERE p.stock_on_hand > 0 
+         OR EXISTS (
+           SELECT 1 FROM sales_lines slines
+           JOIN sales s ON slines.sale_id = s.id
+           WHERE slines.product_id = p.id
+           AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
+           AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
+         )
       ORDER BY category, product_name
     `);
 
