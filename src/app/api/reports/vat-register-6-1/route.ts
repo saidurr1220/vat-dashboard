@@ -9,15 +9,23 @@ export async function GET(request: NextRequest) {
         const targetMonth = searchParams.get('month') || (currentDate.getMonth() + 1).toString().padStart(2, '0');
         const targetYear = searchParams.get('year') || currentDate.getFullYear().toString();
 
-        // Part A: Purchases (Imports)
+        // Purchase Register - All BOE imports
         const purchasesResult = await db.execute(sql`
             SELECT 
+                ib.id,
                 ib.boe_no,
                 ib.boe_date,
-                COALESCE(ib.office_code, 'Import') as supplier,
+                COALESCE(ib.office_code, '') as office_code,
+                COALESCE(ib.item_no, '') as item_no,
                 ib.description,
+                COALESCE(ib.hs_code, '') as hs_code,
+                CAST(COALESCE(ib.qty, 0) AS NUMERIC) as qty,
+                COALESCE(ib.unit, '') as unit,
                 CAST(COALESCE(ib.assessable_value, 0) AS NUMERIC) as assessable_value,
+                CAST(COALESCE(ib.base_vat, 0) AS NUMERIC) as base_vat,
+                CAST(COALESCE(ib.sd, 0) AS NUMERIC) as sd,
                 CAST(COALESCE(ib.vat, 0) AS NUMERIC) as vat,
+                CAST(COALESCE(ib.at, 0) AS NUMERIC) as at,
                 (CAST(COALESCE(ib.assessable_value, 0) AS NUMERIC) + 
                  CAST(COALESCE(ib.base_vat, 0) AS NUMERIC) + 
                  CAST(COALESCE(ib.sd, 0) AS NUMERIC) + 
@@ -26,7 +34,7 @@ export async function GET(request: NextRequest) {
             FROM imports_boe ib
             WHERE EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
                 AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
-            ORDER BY ib.boe_date, ib.boe_no
+            ORDER BY ib.boe_date, ib.boe_no, ib.item_no
         `);
 
         // Part B: Sales > 2 Lakh

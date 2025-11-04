@@ -1,366 +1,349 @@
-import { db } from "@/db/client";
-import { sql } from "drizzle-orm";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { BarChart3, TrendingUp, Package, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, FileText, Download, Calendar } from "lucide-react";
+import { generateMushok62PDF } from "@/lib/pdf-generator";
 
-export const dynamic = "force-dynamic";
-
-interface StockMovement {
-  product_id: number;
-  product_name: string;
-  category: string;
-  opening_stock: number;
-  purchases: number;
-  sales: number;
-  closing_stock: number;
-  unit_price: number;
-  opening_value: number;
-  purchase_value: number;
-  sales_value: number;
-  closing_value: number;
+interface SaleRecord {
+  invoice_no: string;
+  sale_date: string;
+  customer: string;
+  customer_bin: string;
+  customer_address: string;
+  total_value: number;
+  vat_amount: number;
+  taxable_value: number;
+  amount_type: string;
+  notes?: string;
 }
 
-async function getSaleRegisterData(month?: string, year?: string) {
-  try {
-    const currentDate = new Date();
-    const targetMonth = month || (currentDate.getMonth() + 1).toString();
-    const targetYear = year || currentDate.getFullYear().toString();
-
-    // Simplified query - just show current stock and sales for the month
-    const result = await db.execute(sql`
-      SELECT 
-        p.id as product_id,
-        p.name as product_name,
-        COALESCE(p.category, 'General') as category,
-        p.stock_on_hand as closing_stock,
-        p.sell_ex_vat as unit_price,
-        
-        -- Sales during month
-        COALESCE((
-          SELECT SUM(CAST(slines.qty AS NUMERIC))
-          FROM sales_lines slines
-          JOIN sales s ON slines.sale_id = s.id
-          WHERE slines.product_id = p.id
-          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-        ), 0) as sales,
-        
-        -- Purchases from imports (BOE) during month
-        COALESCE((
-          SELECT SUM(CAST(ib.qty AS NUMERIC))
-          FROM imports_boe ib
-          WHERE p.boe_no = ib.boe_no
-          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
-        ), 0) as purchases,
-        
-        -- Calculate opening stock (closing + sales - purchases)
-        (p.stock_on_hand + COALESCE((
-          SELECT SUM(CAST(slines.qty AS NUMERIC))
-          FROM sales_lines slines
-          JOIN sales s ON slines.sale_id = s.id
-          WHERE slines.product_id = p.id
-          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-        ), 0) - COALESCE((
-          SELECT SUM(CAST(ib.qty AS NUMERIC))
-          FROM imports_boe ib
-          WHERE p.boe_no = ib.boe_no
-          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
-        ), 0)) as opening_stock,
-        
-        -- Values
-        (p.stock_on_hand * p.sell_ex_vat) as closing_value,
-        ((p.stock_on_hand + COALESCE((
-          SELECT SUM(CAST(slines.qty AS NUMERIC))
-          FROM sales_lines slines
-          JOIN sales s ON slines.sale_id = s.id
-          WHERE slines.product_id = p.id
-          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-        ), 0) - COALESCE((
-          SELECT SUM(CAST(ib.qty AS NUMERIC))
-          FROM imports_boe ib
-          WHERE p.boe_no = ib.boe_no
-          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
-        ), 0)) * p.sell_ex_vat) as opening_value,
-        
-        (COALESCE((
-          SELECT SUM(CAST(ib.qty AS NUMERIC))
-          FROM imports_boe ib
-          WHERE p.boe_no = ib.boe_no
-          AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(targetYear)}
-        ), 0) * p.sell_ex_vat) as purchase_value,
-        
-        (COALESCE((
-          SELECT SUM(CAST(slines.qty AS NUMERIC))
-          FROM sales_lines slines
-          JOIN sales s ON slines.sale_id = s.id
-          WHERE slines.product_id = p.id
-          AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
-          AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-        ), 0) * p.sell_ex_vat) as sales_value
-        
-      FROM products p
-      WHERE p.stock_on_hand > 0 
-         OR EXISTS (
-           SELECT 1 FROM sales_lines slines
-           JOIN sales s ON slines.sale_id = s.id
-           WHERE slines.product_id = p.id
-           AND EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
-           AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-         )
-      ORDER BY category, product_name
-    `);
-
-    return result.rows as unknown as StockMovement[];
-  } catch (error) {
-    console.error("Error fetching sale register data:", error);
-    return [];
-  }
-}
-
-export default async function SaleRegister62Page({
-  searchParams,
-}: {
-  searchParams: { month?: string; year?: string };
-}) {
-  const movements = await getSaleRegisterData(
-    searchParams.month,
-    searchParams.year
-  );
+export default function SaleRegister62Page() {
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
 
   const currentDate = new Date();
-  const displayMonth =
-    searchParams.month || (currentDate.getMonth() + 1).toString();
-  const displayYear = searchParams.year || currentDate.getFullYear().toString();
+  const [selectedMonth, setSelectedMonth] = useState(
+    (currentDate.getMonth() + 1).toString().padStart(2, "0")
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    currentDate.getFullYear().toString()
+  );
+
+  const displayMonth = selectedMonth;
+  const displayYear = selectedYear;
   const monthName = new Date(
     parseInt(displayYear),
     parseInt(displayMonth) - 1
-  ).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
-  // Calculate totals
-  const totals = movements.reduce(
-    (acc, item) => ({
-      openingValue: acc.openingValue + Number(item.opening_value),
-      purchaseValue: acc.purchaseValue + Number(item.purchase_value),
-      salesValue: acc.salesValue + Number(item.sales_value),
-      closingValue: acc.closingValue + Number(item.closing_value),
-    }),
-    { openingValue: 0, purchaseValue: 0, salesValue: 0, closingValue: 0 }
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        // Load settings
+        const settingsResponse = await fetch("/api/settings");
+        const settingsData = await settingsResponse.json();
+        setSettings(settingsData);
+
+        // Load sales data
+        const response = await fetch(
+          `/api/reports/sale-register-6-2?month=${displayMonth}&year=${displayYear}`
+        );
+        const result = await response.json();
+        setSales(result.sales || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [displayMonth, displayYear]);
+
+  const handleDownloadPDF = async () => {
+    try {
+      setDownloading(true);
+
+      const response = await fetch(
+        `/api/reports/sale-register-6-2?month=${displayMonth}&year=${displayYear}`
+      );
+      const result = await response.json();
+
+      const pdfData = {
+        sales: result.sales || [],
+        period: {
+          month: displayMonth,
+          year: displayYear,
+        },
+        settings: settings,
+      };
+
+      const pdf = generateMushok62PDF(pdfData);
+      pdf.save(`Mushok_6.2_${displayYear}_${displayMonth}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(e.target.value);
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedYear(e.target.value);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  const totals = sales.reduce(
+    (acc, item) => {
+      const taxableValue = Number(item.taxable_value || 0);
+      const vatAmount = Number(item.vat_amount || 0);
+      return {
+        taxableValue: acc.taxableValue + taxableValue,
+        vat: acc.vat + vatAmount,
+        totalValue: acc.totalValue + taxableValue + vatAmount,
+      };
+    },
+    { taxableValue: 0, vat: 0, totalValue: 0 }
   );
 
-  // Group by category
-  const groupedByCategory = movements.reduce((acc, item) => {
-    const category = item.category || "Uncategorized";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, StockMovement[]>);
+  const valueExVat = totals.taxableValue;
+
+  // Generate year options (last 5 years)
+  const yearOptions = [];
+  for (let i = 0; i < 5; i++) {
+    yearOptions.push((currentDate.getFullYear() - i).toString());
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="max-w-full mx-auto space-y-6">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-8 h-8 text-white" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Sale Register 6.2
+          <h1 className="text-3xl font-bold text-gray-900">
+            মূসক ৬.২ - বিক্রয় রেজিস্টার
           </h1>
-          <p className="text-gray-600 mt-2">
-            Stock Movement Report - {monthName}
+          <p className="text-lg text-gray-600 mt-2">
+            Sales Register - {monthName}
           </p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-800">
-                    Opening Stock
-                  </p>
-                  <p className="text-2xl font-bold text-blue-900">
-                    ৳{(totals.openingValue / 1000).toFixed(0)}K
-                  </p>
+        {/* Month/Year Selector and Download Button */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-gray-500" />
+                  <label className="text-sm font-medium text-gray-700">
+                    Month:
+                  </label>
+                  <select
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-800">
-                    Purchases
-                  </p>
-                  <p className="text-2xl font-bold text-green-900">
-                    ৳{(totals.purchaseValue / 1000).toFixed(0)}K
-                  </p>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Year:
+                  </label>
+                  <select
+                    value={selectedYear}
+                    onChange={handleYearChange}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-800">Sales</p>
-                  <p className="text-2xl font-bold text-purple-900">
-                    ৳{(totals.salesValue / 1000).toFixed(0)}K
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={downloading || loading || sales.length === 0}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {downloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Mushok 6.2 PDF
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-800">
-                    Closing Stock
-                  </p>
-                  <p className="text-2xl font-bold text-orange-900">
-                    ৳{(totals.closingValue / 1000).toFixed(0)}K
-                  </p>
-                </div>
-                <Package className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stock Movement Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Stock Movement Details</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              সকল বিক্রয় চালান (All Sales Invoices)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Product
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      ক্রমিক
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Opening
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      চালান নং
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Purchases
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      তারিখ
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Sales
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      ক্রেতার নাম
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Closing
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      ঠিকানা
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Unit Price
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      BIN/NID
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Closing Value
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">
+                      করযোগ্য মূল্য
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">
+                      মূসক (১৫%)
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">
+                      মোট মূল্য
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {movements.length === 0 ? (
+                  {sales.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center">
-                        <div className="text-gray-500">
-                          <Package className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                          <p className="font-medium">
-                            No stock movement data for {monthName}
-                          </p>
-                          <p className="text-sm mt-1">
-                            Add products and make sales to see stock movements
-                          </p>
-                        </div>
+                      <td colSpan={9} className="px-6 py-12 text-center">
+                        <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                        <p className="font-medium text-gray-500">
+                          এই মাসে কোন বিক্রয় নেই
+                        </p>
                       </td>
                     </tr>
-                  ) : null}
-                  {Object.entries(groupedByCategory).map(
-                    ([category, items]) => (
-                      <>
-                        <tr key={category} className="bg-gray-100">
-                          <td
-                            colSpan={7}
-                            className="px-6 py-3 font-semibold text-gray-900"
-                          >
-                            {category}
+                  ) : (
+                    sales.map((item, index) => {
+                      const taxableValue = Number(item.taxable_value);
+                      const vatAmount = Number(item.vat_amount);
+                      // Total = Taxable Value + VAT (correct calculation)
+                      const totalValue = taxableValue + vatAmount;
+
+                      return (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-3 py-2 text-gray-900 font-medium">
+                            {item.invoice_no}
+                          </td>
+                          <td className="px-3 py-2 text-gray-600">
+                            {new Date(item.sale_date).toLocaleDateString(
+                              "en-GB"
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-gray-900">
+                            {item.customer}
+                          </td>
+                          <td className="px-3 py-2 text-gray-600 text-xs">
+                            {item.customer_address || "-"}
+                          </td>
+                          <td className="px-3 py-2 text-gray-600">
+                            {item.customer_bin || "-"}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-900">
+                            ৳
+                            {taxableValue.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="px-3 py-2 text-right text-green-600 font-medium">
+                            ৳
+                            {vatAmount.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-900 font-medium">
+                            ৳
+                            {totalValue.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
                           </td>
                         </tr>
-                        {items.map((item) => (
-                          <tr
-                            key={item.product_id}
-                            className="hover:bg-gray-50"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.product_name}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm text-gray-600">
-                              {Number(item.opening_stock).toFixed(0)}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm text-green-600">
-                              {Number(item.purchases).toFixed(0)}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm text-red-600">
-                              {Number(item.sales).toFixed(0)}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
-                              {Number(item.closing_stock).toFixed(0)}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm text-gray-600">
-                              ৳{Number(item.unit_price).toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
-                              ৳{Number(item.closing_value).toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </>
-                    )
+                      );
+                    })
                   )}
-                  <tr className="bg-gray-100 font-bold">
-                    <td className="px-6 py-4 text-sm text-gray-900">TOTAL</td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      -
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      -
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      -
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      -
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      -
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      ৳{totals.closingValue.toLocaleString()}
-                    </td>
-                  </tr>
+                  {sales.length > 0 && (
+                    <tr className="bg-blue-50 font-bold">
+                      <td
+                        colSpan={6}
+                        className="px-3 py-3 text-right text-gray-900"
+                      >
+                        মোট:
+                      </td>
+                      <td className="px-3 py-3 text-right text-gray-900">
+                        ৳
+                        {totals.taxableValue.toLocaleString("en-IN", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-3 py-3 text-right text-green-700">
+                        ৳
+                        {totals.vat.toLocaleString("en-IN", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-3 py-3 text-right text-gray-900">
+                        ৳
+                        {totals.totalValue.toLocaleString("en-IN", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

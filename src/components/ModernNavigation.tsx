@@ -41,7 +41,6 @@ const navigation = [
     icon: FileText,
   },
   { name: "Footwear System", href: "/footwear", icon: Package },
-  { name: "Imports (BoE)", href: "/imports", icon: FileText },
   { name: "Treasury", href: "/treasury", icon: Banknote },
   {
     name: "VAT Register 6.1",
@@ -52,6 +51,11 @@ const navigation = [
     name: "Sale Register 6.2",
     href: "/reports/sale-register-6-2",
     icon: BarChart3,
+  },
+  {
+    name: "Mushok 6.10 (>2L)",
+    href: "/reports/mushok-6-10",
+    icon: Scale,
   },
   { name: "Comprehensive Reports", href: "/vat/reports", icon: Download },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },

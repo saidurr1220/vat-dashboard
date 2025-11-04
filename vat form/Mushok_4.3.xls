@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
+	<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+		<Author/>
+		<Title/>
+		<Description/>
+		<Subject/>
+	</DocumentProperties>
+	<Styles>
+		<Style ss:ID="HyperlinkId" ss:Name="Hyperlink">
+			<Font ss:Color="#0000ff"/>
+		</Style>
+		<Style ss:ID="1">
+			<NumberFormat ss:Format="yyyy-M-d HH:mm:ss AM/PM"/>
+		</Style>
+		<Style ss:ID="23">
+			<Alignment ss:Horizontal="Center" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="30">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="22">
+			<Alignment ss:Horizontal="Right" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="28">
+			<Alignment ss:Horizontal="Center" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="29">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="26">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="27">
+			<Alignment ss:Horizontal="Center" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Bold="1" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="25">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="sans-serif" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="32">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="sans-serif" ss:Size="9.0" ss:Color="#606060"/>
+		</Style>
+		<Style ss:ID="33">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="sans-serif" ss:Size="9.0" ss:Color="#606060"/>
+			<NumberFormat ss:Format="[$-409]MM/dd/yyyy h:mm"/>
+		</Style>
+		<Style ss:ID="34">
+			<Alignment ss:Horizontal="Center" ss:Vertical="Bottom" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="sans-serif" ss:Size="9.0" ss:Color="#606060"/>
+		</Style>
+		<Style ss:ID="35">
+			<Alignment ss:Horizontal="Right" ss:Vertical="Bottom" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="sans-serif" ss:Size="9.0" ss:Color="#606060"/>
+		</Style>
+		<Style ss:ID="21">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="31">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="24">
+			<Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+		<Style ss:ID="20">
+			<Alignment ss:Horizontal="Center" ss:Vertical="Top" ss:WrapText="1"/>
+			<Borders>
+				<Border ss:Position="Bottom"/>
+				<Border ss:Position="Top"/>
+				<Border ss:Position="Left"/>
+				<Border ss:Position="Right"/>
+				<Border ss:Position="DiagonalLeft"/>
+			</Borders>
+			<Font ss:FontName="Nikosh" ss:Size="6.0" ss:Color="#000000"/>
+		</Style>
+	</Styles>
+	<Names>
+		<NamedRange ss:Name="__bookmark_2" ss:RefersTo="=Sheet1!R8C2"/>
+		<NamedRange ss:Name="__bookmark_1" ss:RefersTo="=Sheet1!R7C2"/>
+		<NamedRange ss:Name="__bookmark_4" ss:RefersTo="=Sheet1!R10C2"/>
+		<NamedRange ss:Name="__bookmark_3" ss:RefersTo="=Sheet1!R9C2"/>
+	</Names>
+
+<Worksheet ss:Name="Report">
+	<ss:Table>
+		<ss:Column ss:Width="30.592" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="48.896" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="28.416" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="32.768" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="30.592" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="12.288" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="79.488" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="49.024" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="48.896" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="49.024" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="36.736" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="57.216" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="34.56" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="42.88" ss:AutoFitWidth="0"/>
+		<ss:Column ss:Width="30.592" ss:AutoFitWidth="0"/>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="20" ss:MergeAcross="14">
+				<Data ss:Type="String">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="20" ss:MergeAcross="14">
+				<Data ss:Type="String">জাতীয় রাজস্ব বোর্ড ,  ঢাকা</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="21" ss:MergeAcross="14"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="22" ss:MergeAcross="14">
+				<Data ss:Type="String">মূসক - ৪.৩</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="23" ss:MergeAcross="14">
+				<Data ss:Type="String">উপকরণ-উৎপাদ সহগ (Input-Output Coefficient) ঘোষণা </Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="23" ss:MergeAcross="14">
+				<Data ss:Type="String">(বিধি ২১ দ্রষ্টব্য)</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="24" ss:MergeAcross="5">
+				<Data ss:Type="String">১।প্রতিষ্ঠানের নামঃ</Data>
+			</Cell>
+			<Cell ss:Index="7" ss:StyleID="25" ss:MergeAcross="8"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="24" ss:MergeAcross="5">
+				<Data ss:Type="String">২। ঠিকানাঃ</Data>
+			</Cell>
+			<Cell ss:Index="7" ss:StyleID="25" ss:MergeAcross="8"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="24" ss:MergeAcross="5">
+				<Data ss:Type="String">৩। বিনঃ </Data>
+			</Cell>
+			<Cell ss:Index="7" ss:StyleID="25" ss:MergeAcross="8"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="24" ss:MergeAcross="5">
+				<Data ss:Type="String">৪। লাইসেন্সের তারিখঃ  </Data>
+			</Cell>
+			<Cell ss:Index="7" ss:StyleID="25" ss:MergeAcross="8"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="24" ss:MergeAcross="5">
+				<Data ss:Type="String">৫। ঘোষিত সহগ অনুযায়ী পন্য/সেবার প্রথম সরবরাহের তারিখঃ</Data>
+			</Cell>
+			<Cell ss:Index="7" ss:StyleID="26" ss:MergeAcross="8"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="28" ss:MergeDown="1">
+				<Data ss:Type="String">ক্রমিক সংখ্যা</Data>
+			</Cell>
+			<Cell ss:Index="2" ss:StyleID="28" ss:MergeDown="1">
+				<Data ss:Type="String">পণ্যের এইচ এস কোড / সেবা কোড</Data>
+			</Cell>
+			<Cell ss:Index="3" ss:StyleID="30" ss:MergeAcross="1" ss:MergeDown="1">
+				<Data ss:Type="String">পণ্যের নাম ও বিবরণ</Data>
+			</Cell>
+			<Cell ss:Index="5" ss:StyleID="28" ss:MergeDown="1">
+				<Data ss:Type="String">সরবরাহের একক</Data>
+			</Cell>
+			<Cell ss:Index="6" ss:StyleID="28" ss:MergeAcross="5">
+				<Data ss:Type="String">একক পণ্য/সেবা সরবরাহে ব্যবহার্য যাবতীয় উপকরণের/কাঁচামালের এবং প্যাকিং সামগ্রীর বিবরণ, পরিমাণ ও ক্রয়মূল্য (উপকরনভিত্তিক অপচয়ের শতকরা হারসহ) </Data>
+			</Cell>
+			<Cell ss:Index="12" ss:StyleID="28" ss:MergeAcross="2">
+				<Data ss:Type="String">মূল্য সংযোজনের বিবরণ</Data>
+			</Cell>
+			<Cell ss:Index="15" ss:StyleID="28" ss:MergeDown="1">
+				<Data ss:Type="String">মন্তব্য</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="6" ss:StyleID="28" ss:MergeAcross="1">
+				<Data ss:Type="String">বিবরণ</Data>
+			</Cell>
+			<Cell ss:Index="8" ss:StyleID="28">
+				<Data ss:Type="String">অপচয়সহ পরিমাণ</Data>
+			</Cell>
+			<Cell ss:Index="9" ss:StyleID="28">
+				<Data ss:Type="String">মূল্য</Data>
+			</Cell>
+			<Cell ss:Index="10" ss:StyleID="28">
+				<Data ss:Type="String">অপচয়ের পরিমাণ</Data>
+			</Cell>
+			<Cell ss:Index="11" ss:StyleID="28">
+				<Data ss:Type="String">শতকরা হার</Data>
+			</Cell>
+			<Cell ss:Index="12" ss:StyleID="28" ss:MergeAcross="1">
+				<Data ss:Type="String">মূল্য সংযোজনের খাত</Data>
+			</Cell>
+			<Cell ss:Index="14" ss:StyleID="28">
+				<Data ss:Type="String">মূল্য</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="28">
+				<Data ss:Type="String">(১)</Data>
+			</Cell>
+			<Cell ss:Index="2" ss:StyleID="28">
+				<Data ss:Type="String">(২)</Data>
+			</Cell>
+			<Cell ss:Index="3" ss:StyleID="28" ss:MergeAcross="1">
+				<Data ss:Type="String">(৩)</Data>
+			</Cell>
+			<Cell ss:Index="5" ss:StyleID="28">
+				<Data ss:Type="String">(৪)</Data>
+			</Cell>
+			<Cell ss:Index="6" ss:StyleID="28" ss:MergeAcross="1">
+				<Data ss:Type="String">(৫)</Data>
+			</Cell>
+			<Cell ss:Index="8" ss:StyleID="28">
+				<Data ss:Type="String">(৬)</Data>
+			</Cell>
+			<Cell ss:Index="9" ss:StyleID="28">
+				<Data ss:Type="String">(৭)</Data>
+			</Cell>
+			<Cell ss:Index="10" ss:StyleID="28">
+				<Data ss:Type="String">(৮)</Data>
+			</Cell>
+			<Cell ss:Index="11" ss:StyleID="28">
+				<Data ss:Type="String">(৯)</Data>
+			</Cell>
+			<Cell ss:Index="12" ss:StyleID="28" ss:MergeAcross="1">
+				<Data ss:Type="String">(১০)</Data>
+			</Cell>
+			<Cell ss:Index="14" ss:StyleID="28">
+				<Data ss:Type="String">(১১)</Data>
+			</Cell>
+			<Cell ss:Index="15" ss:StyleID="28">
+				<Data ss:Type="String">(১২)</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="31" ss:MergeAcross="14">
+				<Data ss:Type="String"/>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="31" ss:MergeAcross="14">
+				<Data ss:Type="String">বিশেষ দ্রষ্টব্যঃ</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="31" ss:MergeAcross="14">
+				<Data ss:Type="String">১। যেকোনো পণ্য সরবরাহের নুন্যতম ১৫ দিন পূর্বে অনলাইনে মূসক কম্পিউটার সিস্টেমে বা সংশ্লিষ্ট বিভাগীয় কর্মকর্তার দপ্তরে উপকরণ উৎপাদ সহগ ঘোষণা দাখিল করিতে হইবে। &#10;২। পন্যমূল্য উপকরণ/কাঁচামাল বা  মূল্য সংযোজনের খাতের পরিমাণ বা মূল্যে ৭.৫% এর বেশী পরিবর্তন হইলে নতুন ঘোষণা দাখিল করিতে হইবে। &#10;৩। পণ্য ক্রয়ের স্বপক্ষে প্রামাণিক দলিল হিসাবে বিল অব এন্ট্রি বা চালানপত্রের কপি সংযুক্ত করিতে হইবে। </Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="32" ss:MergeAcross="14"/>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="1" ss:StyleID="33" ss:MergeAcross="2" ss:MergeDown="3">
+				<Data ss:Type="DateTime">2019-10-06T16:23:43.148</Data>
+			</Cell>
+			<Cell ss:Index="4" ss:StyleID="34" ss:MergeAcross="8" ss:MergeDown="3">
+				<Data ss:Type="String"/>
+			</Cell>
+			<Cell ss:Index="13" ss:StyleID="35" ss:MergeAcross="2">
+				<Data ss:Type="String">Page </Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="13" ss:StyleID="35" ss:MergeAcross="2">
+				<Data ss:Type="String">1</Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="13" ss:StyleID="35" ss:MergeAcross="2">
+				<Data ss:Type="String"> of </Data>
+			</Cell>
+		</Row>
+		<Row ss:AutoFitHeight="1">
+			<Cell ss:Index="13" ss:StyleID="35" ss:MergeAcross="2">
+				<Data ss:Type="String">1</Data>
+			</Cell>
+		</Row>
+	</ss:Table>
+	<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+		<PageSetup>
+			<PageMargins x:Bottom="0.0" x:Left="0.0" x:Right="0.0" x:Top="0.0"/>
+			<Layout x:Orientation="Portrait"/>
+		</PageSetup>
+		<Print>
+			<PaperSizeIndex>9</PaperSizeIndex>
+		</Print>
+	</WorksheetOptions>
+</Worksheet>
+</Workbook>

@@ -51,40 +51,45 @@ export async function POST(request: NextRequest) {
 
         // Check for different CSV formats
         const firstRecord = records[0];
-        const hasStandardFormat = 'assessable_value' in firstRecord && 'vat' in firstRecord && 'at' in firstRecord;
-        const hasEnhancedFormat = 'assessable_value' in firstRecord && 'cd_rate' in firstRecord;
-        const hasSimpleFormat = 'base_value' in firstRecord && 'sd_value' in firstRecord;
-        const hasOldSimpleFormat = 'base_value' in firstRecord && 'declared_unit_value' in firstRecord;
+
+        // Normalize column names (handle spaces and case)
+        const normalizedRecord: any = {};
+        Object.keys(firstRecord).forEach(key => {
+            const normalizedKey = key.toLowerCase().trim().replace(/\s+/g, '_');
+            normalizedRecord[normalizedKey] = firstRecord[key];
+        });
+
+        const hasStandardFormat = 'assessable_value' in normalizedRecord && 'vat' in normalizedRecord && 'at' in normalizedRecord;
+        const hasEnhancedFormat = 'assessable_value' in normalizedRecord && 'cd_rate' in normalizedRecord;
+        const hasSimpleFormat = 'base_value' in normalizedRecord && 'sd_value' in normalizedRecord;
+        const hasOldSimpleFormat = 'base_value' in normalizedRecord && 'declared_unit_value' in normalizedRecord;
 
         // Validate required columns based on format
         let requiredColumns: string[];
         if (hasEnhancedFormat) {
-            // Enhanced format with Bangladesh customs calculation
             requiredColumns = [
-                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
-                'assessable_value', 'cd_rate', 'rd_rate', 'sd_rate', 'vat_rate', 'ait_rate', 'at_rate', 'unit', 'qty'
+                'boe_number', 'boe_date_(yyyy-mm-dd)', 'item_no', 'hs_code', 'description',
+                'assessable_value', 'cd_rate', 'rd_rate', 'sd_rate', 'vat_rate', 'ait_rate', 'at_rate', 'unit', 'quantity'
             ];
         } else if (hasSimpleFormat) {
-            // Simple format with base + SD calculation (আপনার format)
             requiredColumns = [
-                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
-                'base_value', 'sd_value', 'unit', 'qty'
+                'boe_number', 'boe_date_(yyyy-mm-dd)', 'item_no', 'hs_code', 'description',
+                'base_value', 'sd_value', 'unit', 'quantity'
             ];
         } else if (hasOldSimpleFormat) {
-            // Old simple format with basic calculation
             requiredColumns = [
-                'boe_no', 'boe_date', 'item_no', 'hs_code', 'description',
+                'boe_number', 'boe_date_(yyyy-mm-dd)', 'item_no', 'hs_code', 'description',
                 'base_value', 'sd', 'unit', 'pairs_final', 'declared_unit_value'
             ];
         } else {
-            // Standard format
+            // Standard format - matches our template
             requiredColumns = [
-                'boe_no', 'boe_date', 'office_code', 'item_no', 'hs_code',
-                'description', 'assessable_value', 'base_vat', 'sd', 'vat', 'at', 'qty', 'unit'
+                'boe_number', 'boe_date_(yyyy-mm-dd)', 'item_no', 'hs_code',
+                'description', 'assessable_value', 'base_vat', 'sd', 'vat', 'at', 'quantity', 'unit'
             ];
         }
 
-        const missingColumns = requiredColumns.filter(col => !(col in firstRecord));
+        const missingColumns = requiredColumns.filter(col => !(col in normalizedRecord));
 
         if (missingColumns.length > 0) {
             const formatType = hasEnhancedFormat ? 'Enhanced (BD Customs)' : hasSimpleFormat ? 'Simple (Base+SD)' : hasOldSimpleFormat ? 'Old Simple' : 'Standard';
@@ -102,24 +107,35 @@ export async function POST(request: NextRequest) {
             const record = records[i];
             const rowNum = i + 2; // +2 because CSV is 1-indexed and has header row
 
+            // Normalize column names
+            const normalizedRecord: any = {};
+            Object.keys(record).forEach(key => {
+                const normalizedKey = key.toLowerCase().trim().replace(/\s+/g, '_');
+                normalizedRecord[normalizedKey] = record[key];
+            });
+
             try {
-                // Validate and parse data
-                const boeDate = new Date(record.boe_date);
+                // Get BOE number and date with fallback column names
+                const boeNo = normalizedRecord.boe_number || normalizedRecord.boe_no || '';
+                const boeDateStr = normalizedRecord['boe_date_(yyyy-mm-dd)'] || normalizedRecord.boe_date || '';
+
+                const boeDate = new Date(boeDateStr);
                 if (isNaN(boeDate.getTime())) {
                     errors.push(`Row ${rowNum}: Invalid date format`);
                     continue;
                 }
 
+                const itemNo = normalizedRecord.item_no || '';
+
                 // Check for duplicate BoE number and item combination only
-                // Allow same BoE number with different item numbers
                 const existing = await db
                     .select({ id: importsBoe.id })
                     .from(importsBoe)
-                    .where(sql`${importsBoe.boeNo} = ${record.boe_no} AND ${importsBoe.itemNo} = ${record.item_no}`)
+                    .where(sql`${importsBoe.boeNo} = ${boeNo} AND ${importsBoe.itemNo} = ${itemNo}`)
                     .limit(1);
 
                 if (existing.length > 0) {
-                    errors.push(`Row ${rowNum}: Duplicate BoE ${record.boe_no} item ${record.item_no} already exists`);
+                    errors.push(`Row ${rowNum}: Duplicate BoE ${boeNo} item ${itemNo} already exists`);
                     continue;
                 }
 
@@ -256,19 +272,19 @@ export async function POST(request: NextRequest) {
                 } else {
                     // Standard format - use provided values
                     processedData = {
-                        boeNo: record.boe_no,
+                        boeNo: boeNo,
                         boeDate: boeDate,
-                        officeCode: record.office_code || null,
-                        itemNo: record.item_no,
-                        hsCode: record.hs_code || null,
-                        description: record.description || null,
-                        assessableValue: record.assessable_value ? parseFloat(record.assessable_value) : null,
-                        baseVat: record.base_vat ? parseFloat(record.base_vat) : null,
-                        sd: record.sd ? parseFloat(record.sd) : null,
-                        vat: record.vat ? parseFloat(record.vat) : null,
-                        at: record.at ? parseFloat(record.at) : null,
-                        qty: record.qty ? parseFloat(record.qty) : null,
-                        unit: record.unit || null,
+                        officeCode: normalizedRecord.office_code || null,
+                        itemNo: itemNo,
+                        hsCode: normalizedRecord.hs_code || null,
+                        description: normalizedRecord.description || null,
+                        assessableValue: normalizedRecord.assessable_value ? parseFloat(normalizedRecord.assessable_value) : null,
+                        baseVat: normalizedRecord.base_vat ? parseFloat(normalizedRecord.base_vat) : null,
+                        sd: normalizedRecord.sd ? parseFloat(normalizedRecord.sd) : null,
+                        vat: normalizedRecord.vat ? parseFloat(normalizedRecord.vat) : null,
+                        at: normalizedRecord.at ? parseFloat(normalizedRecord.at) : null,
+                        qty: normalizedRecord.quantity || normalizedRecord.qty ? parseFloat(normalizedRecord.quantity || normalizedRecord.qty) : null,
+                        unit: normalizedRecord.unit || null,
                     };
                 }
 

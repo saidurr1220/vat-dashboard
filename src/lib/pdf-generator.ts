@@ -419,3 +419,920 @@ function getMonthName(month: number): string {
     ];
     return monthNames[month - 1] || 'Unknown';
 }
+
+
+// Mushok 6.2 PDF Generator
+interface Mushok62Sale {
+    invoice_no: string;
+    sale_date: string;
+    customer: string;
+    customer_bin: string;
+    customer_address: string;
+    total_value: number;
+    vat_amount: number;
+    taxable_value: number;
+    amount_type: string;
+    notes?: string;
+}
+
+interface Mushok62Data {
+    sales: Mushok62Sale[];
+    period: {
+        month: string;
+        year: string;
+    };
+    settings?: {
+        bin: string;
+        taxpayerName: string;
+        address: string;
+    };
+}
+
+export function generateMushok62PDF(data: Mushok62Data) {
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
+    });
+
+    // Add Unicode support for Bengali text
+    doc.setLanguage("bn");
+    doc.setFont("helvetica");
+
+    doc.setProperties({
+        title: 'Mushok 6.2 - Sale Register',
+        subject: 'VAT Sale Register',
+        author: data.settings?.taxpayerName || 'M S RAHMAN TRADERS',
+        creator: 'VAT Management System'
+    });
+
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPosition = 15;
+
+    const colors = {
+        primary: [41, 128, 185],
+        headerBg: [240, 240, 240],
+        border: [0, 0, 0],
+        text: [0, 0, 0]
+    };
+
+    let inTableSection62 = false;
+
+    // Helper function for page break
+    const checkPageBreak = (requiredSpace: number) => {
+        if (yPosition + requiredSpace > pageHeight - 20) {
+            addFooter();
+            doc.addPage();
+            yPosition = 15;
+            addHeader();
+            if (inTableSection62) {
+                addTableHeader();
+            }
+        }
+    };
+
+    const addHeader = () => {
+        // Title section
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 10;
+
+        doc.setFontSize(12);
+        doc.text('MUSHAK-6.2', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        // Period
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthName = monthNames[parseInt(data.period.month) - 1];
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${data.settings?.taxpayerName || ''} BIN: ${data.settings?.bin || ''} - ${monthName} ${data.period.year}`,
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SALES REGISTER (Bikroy Hisab Pustak)', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('(Applicable for registered or enlisted persons engaged in processing of goods or services)',
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 4;
+
+        doc.text('[See clause (b) of sub-rule (1) of rule 40 and clause (a) of rule 41]',
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 8;
+    };
+
+    const addTableHeader = () => {
+        const startX = 10;
+        // Total = 277mm to fill entire width
+        const colWidths = [15, 20, 55, 40, 32, 32, 30, 26, 27];
+        let currentX = startX;
+
+        // Header background
+        doc.setFillColor(colors.headerBg[0], colors.headerBg[1], colors.headerBg[2]);
+        doc.rect(startX, yPosition, pageWidth - 20, 20, 'F');
+
+        // Header borders
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.3);
+        doc.rect(startX, yPosition, pageWidth - 20, 20);
+
+        // Header text
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+
+        const headers = [
+            'Sr.\nNo.\n(1)',
+            'Date\n\n(2)',
+            'Buyer/Service\nName\n(7)',
+            'Address\n\n(8)',
+            'Reg/NID\nNo.\n(9)',
+            'Invoice\nNo.\n(10)',
+            'Taxable\nValue\n(14)',
+            'VAT\n\n(16)',
+            'Total\nValue'
+        ];
+
+        headers.forEach((header, i) => {
+            const lines = header.split('\n');
+            const lineHeight = 4;
+            const startY = yPosition + 5;
+
+            lines.forEach((line, lineIndex) => {
+                doc.text(line, currentX + colWidths[i] / 2, startY + (lineIndex * lineHeight), { align: 'center' });
+            });
+
+            // Vertical lines
+            doc.line(currentX, yPosition, currentX, yPosition + 20);
+            currentX += colWidths[i];
+        });
+
+        // Right border
+        doc.line(currentX, yPosition, currentX, yPosition + 20);
+        yPosition += 20;
+    };
+
+    const addTableRow = (rowData: string[], isTotal: boolean = false) => {
+        const startX = 10;
+        // Total = 277mm to fill entire width
+        const colWidths = [15, 20, 55, 40, 32, 32, 30, 26, 27];
+        const rowHeight = isTotal ? 10 : 8;
+        let currentX = startX;
+
+        checkPageBreak(rowHeight + 5);
+
+        // Row background for total
+        if (isTotal) {
+            doc.setFillColor(240, 248, 255);
+            doc.rect(startX, yPosition, pageWidth - 20, rowHeight, 'F');
+        }
+
+        // Row borders
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.2);
+        doc.rect(startX, yPosition, pageWidth - 20, rowHeight);
+
+        // Row text
+        doc.setFontSize(isTotal ? 8 : 6);
+        doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
+        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+
+        rowData.forEach((cell, i) => {
+            const align = (i >= 6) ? 'right' : (i === 0 ? 'center' : 'left');
+            const xPos = align === 'right' ? currentX + colWidths[i] - 2 :
+                align === 'center' ? currentX + colWidths[i] / 2 :
+                    currentX + 1.5;
+
+            // Handle long text
+            if (cell.length > 25 && i >= 2 && i <= 4) {
+                const lines = doc.splitTextToSize(cell, colWidths[i] - 3);
+                doc.text(lines[0], xPos, yPosition + 5, { align });
+            } else {
+                doc.text(cell, xPos, yPosition + 5, { align });
+            }
+
+            // Vertical lines
+            doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+            currentX += colWidths[i];
+        });
+
+        // Right border
+        doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+        yPosition += rowHeight;
+    };
+
+    const addFooter = () => {
+        const footerY = pageHeight - 10;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 10, footerY);
+        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth / 2, footerY, { align: 'center' });
+        doc.text('VAT Management System', pageWidth - 10, footerY, { align: 'right' });
+    };
+
+    // Generate PDF
+    addHeader();
+    inTableSection62 = true;
+    addTableHeader();
+
+    // Add sales data
+    let totalTaxableValue = 0;
+    let totalVat = 0;
+    let totalGross = 0;
+
+    data.sales.forEach((sale, index) => {
+        const taxableValue = Number(sale.taxable_value);
+        const vatAmount = Number(sale.vat_amount);
+        // Total = Taxable Value + VAT
+        const grossValue = taxableValue + vatAmount;
+
+        totalTaxableValue += taxableValue;
+        totalVat += vatAmount;
+        totalGross += grossValue;
+
+        const rowData = [
+            (index + 1).toString(),
+            new Date(sale.sale_date).toLocaleDateString('en-GB'),
+            sale.customer,
+            sale.customer_address || '-',
+            sale.customer_bin || '-',
+            sale.invoice_no,
+            `Tk ${taxableValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            `Tk ${vatAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            `Tk ${grossValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+        ];
+
+        addTableRow(rowData);
+    });
+
+    // Add total row
+    if (data.sales.length > 0) {
+        const totalRow = [
+            '',
+            '',
+            '',
+            '',
+            '',
+            'TOTAL:',
+            `Tk ${totalTaxableValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            `Tk ${totalVat.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            `Tk ${totalGross.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+        ];
+        addTableRow(totalRow, true);
+    }
+
+    // Add summary section
+    yPosition += 10;
+    checkPageBreak(30);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SUMMARY', 10, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Sales: ${data.sales.length} transactions`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Taxable Value: Tk ${totalTaxableValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`VAT (15%): Tk ${totalVat.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Total Value: Tk ${totalGross.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+
+    addFooter();
+    return doc;
+}
+
+
+// Mushok 6.10 PDF Generator
+interface Mushok610Transaction {
+    invoice_no: string;
+    transaction_date: string;
+    value: number;
+    supplier_name?: string;
+    supplier_address?: string;
+    supplier_bin?: string;
+    buyer_name?: string;
+    buyer_address?: string;
+    buyer_bin?: string;
+}
+
+interface Mushok610Data {
+    purchases: Mushok610Transaction[];
+    sales: Mushok610Transaction[];
+    period: {
+        month: string;
+        year: string;
+    };
+    settings?: {
+        bin: string;
+        taxpayerName: string;
+        address: string;
+    };
+}
+
+export function generateMushok610PDF(data: Mushok610Data) {
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
+    });
+
+    doc.setProperties({
+        title: 'Mushok 6.10 - High Value Transactions',
+        subject: 'Transactions above 2 Lac BDT',
+        author: data.settings?.taxpayerName || 'M S RAHMAN TRADERS',
+        creator: 'VAT Management System'
+    });
+
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPosition = 15;
+
+    const colors = {
+        primary: [41, 128, 185],
+        headerBg: [240, 240, 240],
+        border: [0, 0, 0],
+        text: [0, 0, 0]
+    };
+
+    let inPurchaseSection = false;
+    let inSalesSection = false;
+
+    const checkPageBreak = (requiredSpace: number) => {
+        if (yPosition + requiredSpace > pageHeight - 20) {
+            addFooter();
+            doc.addPage();
+            yPosition = 15;
+            addHeader();
+            if (inPurchaseSection) {
+                addSectionHeader('PART - A: PURCHASE INFORMATION');
+                addTableHeader(true);
+            } else if (inSalesSection) {
+                addSectionHeader('PART - B: SALES INFORMATION');
+                addTableHeader(false);
+            }
+        }
+    };
+
+    const addHeader = () => {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 10;
+
+        doc.setFontSize(12);
+        doc.text('MUSHAK - 6.10', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthName = monthNames[parseInt(data.period.month) - 1];
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('HIGH VALUE TRANSACTIONS (Above Tk 2,00,000)',
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
+
+        doc.setFontSize(8);
+        doc.text(`[See sub-rule (1) of rule 42] - ${monthName} ${data.period.year}`, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 8;
+
+        // Company info
+        doc.setFontSize(9);
+        doc.text(`Registered/Enlisted Person: ${data.settings?.taxpayerName || ''}`, 15, yPosition);
+        doc.text(`BIN: ${data.settings?.bin || ''}`, pageWidth - 60, yPosition);
+        yPosition += 8;
+    };
+
+    const addSectionHeader = (title: string) => {
+        checkPageBreak(15);
+        doc.setFillColor(colors.headerBg[0], colors.headerBg[1], colors.headerBg[2]);
+        doc.rect(10, yPosition - 2, pageWidth - 20, 10, 'F');
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+        doc.text(title, 15, yPosition + 5);
+        yPosition += 12;
+    };
+
+    const addTableHeader = (isPurchase: boolean) => {
+        const startX = 10;
+        const colWidths = [20, 40, 30, 35, 50, 50, 45];
+        let currentX = startX;
+
+        doc.setFillColor(colors.headerBg[0], colors.headerBg[1], colors.headerBg[2]);
+        doc.rect(startX, yPosition, pageWidth - 20, 15, 'F');
+
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.3);
+        doc.rect(startX, yPosition, pageWidth - 20, 15);
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+
+        const headers = [
+            'Serial\nNo.\n(1)',
+            'Invoice\nNumber\n(2)',
+            'Issue\nDate\n(3)',
+            'Value\n\n(4)',
+            isPurchase ? 'Supplier\nName\n(5)' : 'Buyer\nName\n(5)',
+            isPurchase ? 'Supplier\nAddress\n(6)' : 'Buyer\nAddress\n(6)',
+            isPurchase ? 'Supplier\nBIN/NID\n(7)' : 'Buyer\nBIN/NID\n(7)'
+        ];
+
+        headers.forEach((header, i) => {
+            const lines = header.split('\n');
+            const lineHeight = 4;
+            const startY = yPosition + 3;
+
+            lines.forEach((line, lineIndex) => {
+                doc.text(line, currentX + colWidths[i] / 2, startY + (lineIndex * lineHeight), { align: 'center' });
+            });
+
+            doc.line(currentX, yPosition, currentX, yPosition + 15);
+            currentX += colWidths[i];
+        });
+
+        doc.line(currentX, yPosition, currentX, yPosition + 15);
+        yPosition += 15;
+    };
+
+    const addTableRow = (rowData: string[], isTotal: boolean = false) => {
+        const startX = 10;
+        const colWidths = [20, 40, 30, 35, 50, 50, 45];
+        const rowHeight = isTotal ? 10 : 8;
+        let currentX = startX;
+
+        checkPageBreak(rowHeight + 5);
+
+        if (isTotal) {
+            doc.setFillColor(240, 248, 255);
+            doc.rect(startX, yPosition, pageWidth - 20, rowHeight, 'F');
+        }
+
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.2);
+        doc.rect(startX, yPosition, pageWidth - 20, rowHeight);
+
+        doc.setFontSize(isTotal ? 9 : 7);
+        doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
+
+        rowData.forEach((cell, i) => {
+            const align = (i === 3) ? 'right' : (i === 0 ? 'center' : 'left');
+            const xPos = align === 'right' ? currentX + colWidths[i] - 3 :
+                align === 'center' ? currentX + colWidths[i] / 2 :
+                    currentX + 2;
+
+            if (cell.length > 25 && i >= 4) {
+                const lines = doc.splitTextToSize(cell, colWidths[i] - 4);
+                doc.text(lines[0], xPos, yPosition + 5, { align });
+            } else {
+                doc.text(cell, xPos, yPosition + 5, { align });
+            }
+
+            doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+            currentX += colWidths[i];
+        });
+
+        doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+        yPosition += rowHeight;
+    };
+
+    const addFooter = () => {
+        const footerY = pageHeight - 10;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 10, footerY);
+        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth / 2, footerY, { align: 'center' });
+        doc.text('VAT Management System', pageWidth - 10, footerY, { align: 'right' });
+    };
+
+    // Generate PDF
+    addHeader();
+
+    // Purchase Section
+    inPurchaseSection = true;
+    addSectionHeader('PART - A: PURCHASE INFORMATION');
+    addTableHeader(true);
+
+    let purchaseTotal = 0;
+    data.purchases.forEach((item, index) => {
+        const value = Number(item.value);
+        purchaseTotal += value;
+
+        const rowData = [
+            (index + 1).toString(),
+            item.invoice_no,
+            new Date(item.transaction_date).toLocaleDateString('en-GB'),
+            `Tk ${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            item.supplier_name || '-',
+            item.supplier_address || '-',
+            item.supplier_bin || '-'
+        ];
+
+        addTableRow(rowData);
+    });
+
+    if (data.purchases.length > 0) {
+        const totalRow = [
+            '',
+            '',
+            'TOTAL:',
+            `Tk ${purchaseTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            '',
+            '',
+            ''
+        ];
+        addTableRow(totalRow, true);
+    }
+
+    // Sales Section
+    inPurchaseSection = false;
+    inSalesSection = true;
+    yPosition += 10;
+    addSectionHeader('PART - B: SALES INFORMATION');
+    addTableHeader(false);
+
+    let salesTotal = 0;
+    data.sales.forEach((item, index) => {
+        const value = Number(item.value);
+        salesTotal += value;
+
+        const rowData = [
+            (index + 1).toString(),
+            item.invoice_no,
+            new Date(item.transaction_date).toLocaleDateString('en-GB'),
+            `Tk ${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            item.buyer_name || '-',
+            item.buyer_address || '-',
+            item.buyer_bin || '-'
+        ];
+
+        addTableRow(rowData);
+    });
+
+    if (data.sales.length > 0) {
+        const totalRow = [
+            '',
+            '',
+            'TOTAL:',
+            `Tk ${salesTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+            '',
+            '',
+            ''
+        ];
+        addTableRow(totalRow, true);
+    }
+
+    // Summary
+    yPosition += 10;
+    checkPageBreak(30);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SUMMARY', 10, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Purchases: ${data.purchases.length} transactions (Tk ${purchaseTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })})`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Total Sales: ${data.sales.length} transactions (Tk ${salesTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })})`, 10, yPosition);
+
+    addFooter();
+    return doc;
+}
+
+
+// Mushok 6.1 PDF Generator (Purchase Register - Imports)
+interface Mushok61Purchase {
+    id: number;
+    boe_no: string;
+    boe_date: string;
+    office_code: string;
+    item_no: string;
+    description: string;
+    hs_code: string;
+    qty: number;
+    unit: string;
+    assessable_value: number;
+    base_vat: number;
+    sd: number;
+    vat: number;
+    at: number;
+    total_value: number;
+}
+
+interface Mushok61Data {
+    purchases: Mushok61Purchase[];
+    period: {
+        month: string;
+        year: string;
+    };
+    settings?: {
+        bin: string;
+        taxpayerName: string;
+        address: string;
+    };
+}
+
+export function generateMushok61PDF(data: Mushok61Data) {
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
+    });
+
+    doc.setLanguage("bn");
+    doc.setFont("helvetica");
+
+    doc.setProperties({
+        title: 'Mushok 6.1 - Purchase Register (Imports)',
+        subject: 'VAT Purchase Register',
+        author: data.settings?.taxpayerName || 'M S RAHMAN TRADERS',
+        creator: 'VAT Management System'
+    });
+
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPosition = 15;
+
+    const colors = {
+        primary: [41, 128, 185],
+        headerBg: [240, 240, 240],
+        border: [0, 0, 0],
+        text: [0, 0, 0]
+    };
+
+    let inTableSection = false;
+
+    const checkPageBreak = (requiredSpace: number) => {
+        if (yPosition + requiredSpace > pageHeight - 20) {
+            addFooter();
+            doc.addPage();
+            yPosition = 15;
+            addHeader();
+            if (inTableSection) {
+                addTableHeader();
+            }
+        }
+    };
+
+    const addHeader = () => {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 10;
+
+        doc.setFontSize(12);
+        doc.text('MUSHAK-6.1', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthName = monthNames[parseInt(data.period.month) - 1];
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${data.settings?.taxpayerName || ''} BIN: ${data.settings?.bin || ''} - ${monthName} ${data.period.year}`,
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 6;
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PURCHASE REGISTER - IMPORTS (Kroy Hisab Pustak)', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('(Applicable for registered or enlisted persons engaged in processing of goods or services)',
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 4;
+
+        doc.text('[See clause (a) of sub-rule (1) of rule 40 and clause (a) of rule 41]',
+            pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 8;
+    };
+
+    const addTableHeader = () => {
+        const startX = 10;
+        const colWidths = [10, 22, 18, 12, 45, 22, 15, 22, 18, 18, 18, 18, 22];
+        let currentX = startX;
+
+        doc.setFillColor(colors.headerBg[0], colors.headerBg[1], colors.headerBg[2]);
+        doc.rect(startX, yPosition, pageWidth - 20, 20, 'F');
+
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.3);
+        doc.rect(startX, yPosition, pageWidth - 20, 20);
+
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+
+        const headers = [
+            'Sr.\nNo.\n(1)',
+            'BOE\nNo.\n(5)',
+            'Date\n\n(6)',
+            'Off.\nCode',
+            'Description\n\n(10)',
+            'HS\nCode',
+            'Qty\n\n(11)',
+            'Assess.\nValue\n(12)',
+            'Base\nVAT',
+            'SD\n\n(13)',
+            'VAT\n\n(14)',
+            'AT\n\n',
+            'Total\nValue'
+        ];
+
+        headers.forEach((header, i) => {
+            const lines = header.split('\n');
+            const lineHeight = 4;
+            const startY = yPosition + 5;
+
+            lines.forEach((line, lineIndex) => {
+                doc.text(line, currentX + colWidths[i] / 2, startY + (lineIndex * lineHeight), { align: 'center' });
+            });
+
+            doc.line(currentX, yPosition, currentX, yPosition + 20);
+            currentX += colWidths[i];
+        });
+
+        doc.line(currentX, yPosition, currentX, yPosition + 20);
+        yPosition += 20;
+    };
+
+    const addTableRow = (rowData: string[], isTotal: boolean = false) => {
+        const startX = 10;
+        const colWidths = [10, 22, 18, 12, 45, 22, 15, 22, 18, 18, 18, 18, 22];
+        const rowHeight = isTotal ? 10 : 8;
+        let currentX = startX;
+
+        checkPageBreak(rowHeight + 5);
+
+        if (isTotal) {
+            doc.setFillColor(240, 248, 255);
+            doc.rect(startX, yPosition, pageWidth - 20, rowHeight, 'F');
+        }
+
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setLineWidth(0.2);
+        doc.rect(startX, yPosition, pageWidth - 20, rowHeight);
+
+        doc.setFontSize(isTotal ? 7 : 5.5);
+        doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
+        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+
+        rowData.forEach((cell, i) => {
+            const align = (i >= 7) ? 'right' : (i === 0 ? 'center' : 'left');
+            const xPos = align === 'right' ? currentX + colWidths[i] - 1.5 :
+                align === 'center' ? currentX + colWidths[i] / 2 :
+                    currentX + 1.5;
+
+            if (cell.length > 20 && i === 4) {
+                const lines = doc.splitTextToSize(cell, colWidths[i] - 3);
+                doc.text(lines[0], xPos, yPosition + 5, { align });
+            } else {
+                doc.text(cell, xPos, yPosition + 5, { align });
+            }
+
+            doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+            currentX += colWidths[i];
+        });
+
+        doc.line(currentX, yPosition, currentX, yPosition + rowHeight);
+        yPosition += rowHeight;
+    };
+
+    const addFooter = () => {
+        const footerY = pageHeight - 10;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 10, footerY);
+        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth / 2, footerY, { align: 'center' });
+        doc.text('VAT Management System', pageWidth - 10, footerY, { align: 'right' });
+    };
+
+    // Generate PDF
+    addHeader();
+    inTableSection = true;
+    addTableHeader();
+
+    // Add purchase data
+    let totalAssessable = 0;
+    let totalBaseVat = 0;
+    let totalSd = 0;
+    let totalVat = 0;
+    let totalAt = 0;
+    let totalValue = 0;
+
+    data.purchases.forEach((item, index) => {
+        const assessable = Number(item.assessable_value);
+        const baseVat = Number(item.base_vat);
+        const sd = Number(item.sd);
+        const vat = Number(item.vat);
+        const at = Number(item.at);
+        const total = Number(item.total_value);
+
+        totalAssessable += assessable;
+        totalBaseVat += baseVat;
+        totalSd += sd;
+        totalVat += vat;
+        totalAt += at;
+        totalValue += total;
+
+        const rowData = [
+            (index + 1).toString(),
+            item.boe_no,
+            new Date(item.boe_date).toLocaleDateString('en-GB'),
+            item.office_code || '-',
+            item.description,
+            item.hs_code || '-',
+            `${Number(item.qty).toFixed(1)} ${item.unit}`,
+            assessable.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            baseVat.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            sd.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            vat.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            at.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            total.toLocaleString('en-IN', { maximumFractionDigits: 0 })
+        ];
+
+        addTableRow(rowData);
+    });
+
+    // Add total row
+    if (data.purchases.length > 0) {
+        const totalRow = [
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            'TOTAL:',
+            totalAssessable.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            totalBaseVat.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            totalSd.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            totalVat.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            totalAt.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })
+        ];
+        addTableRow(totalRow, true);
+    }
+
+    // Add summary section
+    yPosition += 10;
+    checkPageBreak(30);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SUMMARY', 10, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Imports: ${data.purchases.length} BOE entries`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Assessable Value: Tk ${totalAssessable.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Total VAT: Tk ${totalVat.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Total AT: Tk ${totalAt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+    yPosition += 5;
+    doc.text(`Total Value: Tk ${totalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 10, yPosition);
+
+    addFooter();
+    return doc;
+}

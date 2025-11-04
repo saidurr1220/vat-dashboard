@@ -68,38 +68,45 @@ export async function PUT(
         const id = parseInt(idParam);
         const body = await request.json();
 
+        console.log('PUT request received for ID:', id);
+        console.log('Request body:', body);
+
         const updatedRecord = await db
             .update(importsBoe)
             .set({
                 boeNo: body.boeNo,
                 boeDate: new Date(body.boeDate),
-                officeCode: body.officeCode,
+                officeCode: body.officeCode || null,
                 itemNo: body.itemNo,
-                hsCode: body.hsCode,
+                hsCode: body.hsCode || null,
                 description: body.description,
-                assessableValue: body.assessableValue,
-                baseVat: body.baseVat,
-                sd: body.sd,
-                vat: body.vat,
-                at: body.at,
-                qty: body.qty,
-                unit: body.unit,
+                assessableValue: body.assessableValue ? body.assessableValue.toString() : null,
+                baseVat: body.baseVat ? body.baseVat.toString() : null,
+                sd: body.sd ? body.sd.toString() : null,
+                vat: body.vat ? body.vat.toString() : null,
+                at: body.at ? body.at.toString() : null,
+                qty: body.qty ? body.qty.toString() : null,
+                unit: body.unit || null,
             })
             .where(eq(importsBoe.id, id))
             .returning();
 
+        console.log('Update result:', updatedRecord);
+
         if (updatedRecord.length === 0) {
+            console.log('No record found to update');
             return NextResponse.json(
                 { error: 'BOE record not found' },
                 { status: 404 }
             );
         }
 
-        return NextResponse.json(updatedRecord[0]);
+        console.log('Record updated successfully');
+        return NextResponse.json({ success: true, data: updatedRecord[0] });
     } catch (error) {
         console.error('Error updating BOE record:', error);
         return NextResponse.json(
-            { error: 'Failed to update BOE record' },
+            { error: 'Failed to update BOE record', details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
