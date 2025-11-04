@@ -12,9 +12,6 @@ import {
   Users,
   BarChart3,
 } from "lucide-react";
-import DashboardKPIs from "@/components/DashboardKPIs";
-import DashboardHeader from "@/components/DashboardHeader";
-import DashboardErrorBoundary from "@/components/DashboardErrorBoundary";
 
 // Force dynamic for real-time data
 export const dynamic = "force-dynamic";
@@ -29,13 +26,13 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Header */}
-        <DashboardHeader />
-
-        {/* Main KPI Cards */}
-        <DashboardErrorBoundary>
-          <DashboardKPIs />
-        </DashboardErrorBoundary>
+        {/* Simple Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">VAT Dashboard</h1>
+          <p className="text-gray-600 mt-1">
+            M S RAHMAN TRADERS - {currentMonth}
+          </p>
+        </div>
 
         {/* Quick Actions Grid */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
