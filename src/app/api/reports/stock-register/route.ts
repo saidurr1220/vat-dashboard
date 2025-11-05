@@ -8,132 +8,125 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month'); // YYYY-MM format
     const category = searchParams.get('category');
 
+    console.log('Stock Register API called with:', { month, category });
+
     // If no month specified, get last 3 months
     const monthsToFetch = month ? [month] : await getLastThreeMonths();
+    console.log('Months to fetch:', monthsToFetch);
 
     const results = [];
 
     for (const targetMonth of monthsToFetch) {
       const [year, monthNum] = targetMonth.split('-');
+      console.log(`Processing month: ${targetMonth} (Year: ${year}, Month: ${monthNum})`);
 
-      // Build category filter
-      const categoryFilter = category && category !== 'all'
-        ? sql`AND p.category = ${category}`
-        : sql``;
+      // Get all products with their stock movements
+      let query = sql`
+        SELECT DISTINCT
+          p.id as item_id,
+          p.sku as item_sku,
+          p.name as item_name,
+          p.category,
+          p.unit,
+          p.stock_on_hand as current_stock,
+          
+          -- Purchases from imports_boe
+          COALESCE((
+            SELECT SUM(ib.qty)
+            FROM imports_boe ib
+            WHERE ib.product_id = p.id
+              AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
+          ), 0) as purchase_qty,
+          
+          COALESCE((
+            SELECT AVG(ib.unit_price)
+            FROM imports_boe ib
+            WHERE ib.product_id = p.id
+              AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
+          ), 0) as avg_unit_cost,
+          
+          -- Sales from sales_lines
+          COALESCE((
+            SELECT SUM(sl.qty)
+            FROM sales_lines sl
+            JOIN sales s ON sl.sale_id = s.id
+            WHERE sl.product_id = p.id
+              AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+          ), 0) as sales_qty
+          
+        FROM products p
+        WHERE (
+          EXISTS (
+            SELECT 1 FROM imports_boe ib
+            WHERE ib.product_id = p.id
+              AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
+          )
+          OR EXISTS (
+            SELECT 1 FROM sales_lines sl
+            JOIN sales s ON sl.sale_id = s.id
+            WHERE sl.product_id = p.id
+              AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+          )
+        )
+      `;
 
-      // Get products with purchases in this month
-      const purchasesQuery = await db.execute(sql`
-                SELECT 
-                    p.id as item_id,
-                    p.sku as item_sku,
-                    p.name as item_name,
-                    p.category,
-                    p.unit,
-                    p.stock_on_hand as current_stock,
-                    COALESCE(SUM(ib.qty), 0) as purchase_qty,
-                    COALESCE(AVG(ib.unit_price), 0) as avg_unit_cost
-                FROM products p
-                INNER JOIN imports_boe ib ON p.id = ib.product_id
-                WHERE EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
-                    AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
-                    ${categoryFilter}
-                GROUP BY p.id, p.sku, p.name, p.category, p.unit, p.stock_on_hand
-            `);
-
-      // Get products with sales in this month
-      const salesQuery = await db.execute(sql`
-                SELECT 
-                    p.id as item_id,
-                    p.sku as item_sku,
-                    p.name as item_name,
-                    p.category,
-                    p.unit,
-                    p.stock_on_hand as current_stock,
-                    COALESCE(SUM(sl.qty), 0) as sales_qty
-                FROM products p
-                INNER JOIN sales_lines sl ON p.id = sl.product_id
-                INNER JOIN sales s ON sl.sale_id = s.id
-                WHERE EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
-                    AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
-                    ${categoryFilter}
-                GROUP BY p.id, p.sku, p.name, p.category, p.unit, p.stock_on_hand
-            `);
-
-      // Combine purchases and sales data
-      const itemsMap = new Map();
-
-      // Add purchases
-      for (const row of purchasesQuery.rows) {
-        itemsMap.set(row.item_id, {
-          item_id: row.item_id,
-          item_sku: row.item_sku,
-          item_name: row.item_name,
-          category: row.category,
-          unit: row.unit,
-          current_stock: Number(row.current_stock || 0),
-          purchase_qty: Number(row.purchase_qty || 0),
-          avg_unit_cost: Number(row.avg_unit_cost || 0),
-          sales_qty: 0
-        });
+      // Add category filter if specified
+      if (category && category !== 'all') {
+        query = sql`${query} AND p.category = ${category}`;
       }
 
-      // Add sales
-      for (const row of salesQuery.rows) {
-        if (itemsMap.has(row.item_id)) {
-          itemsMap.get(row.item_id).sales_qty = Number(row.sales_qty || 0);
-        } else {
-          itemsMap.set(row.item_id, {
-            item_id: row.item_id,
-            item_sku: row.item_sku,
-            item_name: row.item_name,
-            category: row.category,
-            unit: row.unit,
-            current_stock: Number(row.current_stock || 0),
-            purchase_qty: 0,
-            avg_unit_cost: 0,
-            sales_qty: Number(row.sales_qty || 0)
-          });
-        }
-      }
+      query = sql`${query} ORDER BY p.name`;
 
-      // Process each item
-      for (const [itemId, itemData] of itemsMap) {
-        // Get invoice details for this product
+      const stockData = await db.execute(query);
+      console.log(`Found ${stockData.rows.length} products with movements`);
+
+      // Process each product
+      for (const row of stockData.rows) {
+        // Get invoice details
         const invoicesQuery = await db.execute(sql`
-                    SELECT 
-                        s.invoice_no,
-                        s.dt as date,
-                        s.customer,
-                        sl.qty as qty_out,
-                        sl.unit_price_value as price_excl,
-                        (sl.line_total_calc - sl.unit_price_value * sl.qty) as vat_15,
-                        sl.line_total_calc as total_incl
-                    FROM sales_lines sl
-                    JOIN sales s ON sl.sale_id = s.id
-                    WHERE sl.product_id = ${itemId}
-                        AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
-                        AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
-                    ORDER BY s.dt
-                `);
+          SELECT 
+            s.invoice_no,
+            s.dt as date,
+            s.customer,
+            sl.qty as qty_out,
+            sl.unit_price_value as price_excl,
+            (sl.line_total_calc - sl.unit_price_value * sl.qty) as vat_15,
+            sl.line_total_calc as total_incl
+          FROM sales_lines sl
+          JOIN sales s ON sl.sale_id = s.id
+          WHERE sl.product_id = ${row.item_id}
+            AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+            AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+          ORDER BY s.dt
+        `);
 
-        // Calculate opening stock (current - purchases + sales)
-        const opening_qty = itemData.current_stock - itemData.purchase_qty + itemData.sales_qty;
+        const purchase_qty = Number(row.purchase_qty || 0);
+        const sales_qty = Number(row.sales_qty || 0);
+        const current_stock = Number(row.current_stock || 0);
+
+        // Calculate opening stock
+        const opening_qty = Math.max(0, current_stock - purchase_qty + sales_qty);
 
         results.push({
           month: targetMonth,
           item: {
-            id: itemData.item_id,
-            sku: itemData.item_sku,
-            name: itemData.item_name,
-            category: itemData.category,
-            unit: itemData.unit
+            id: row.item_id,
+            sku: row.item_sku,
+            name: row.item_name,
+            category: row.category,
+            unit: row.unit
           },
-          opening_qty: Math.max(0, opening_qty),
-          purchase_qty: itemData.purchase_qty,
-          sales_qty: itemData.sales_qty,
+          opening_qty,
+          purchase_qty,
+          sales_qty,
           adjust_qty: 0,
-          closing_qty: itemData.current_stock,
-          avg_unit_cost: itemData.avg_unit_cost,
+          closing_qty: current_stock,
+          avg_unit_cost: Number(row.avg_unit_cost || 0),
           out_invoices: invoicesQuery.rows.map((inv: any) => ({
             date: new Date(inv.date).toISOString().split('T')[0],
             invoice_no: inv.invoice_no,
@@ -150,6 +143,8 @@ export async function GET(request: NextRequest) {
         });
       }
     }
+
+    console.log(`Total results: ${results.length}`);
 
     return NextResponse.json({
       success: true,
