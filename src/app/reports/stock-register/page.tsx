@@ -320,14 +320,16 @@ export default function StockRegisterPage() {
             <div>
               <Label htmlFor="category">Category</Label>
               <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
+                value={selectedCategory || "all"}
+                onValueChange={(value) =>
+                  setSelectedCategory(value === "all" ? "" : value)
+                }
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="footwear">Footwear</SelectItem>
                   <SelectItem value="reagent">Reagent</SelectItem>
                   <SelectItem value="instrument">Instrument</SelectItem>
