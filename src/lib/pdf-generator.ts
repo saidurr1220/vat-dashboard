@@ -495,13 +495,16 @@ export function generateMushok62PDF(data: Mushok62Data) {
     };
 
     const addHeader = () => {
-        // Title section - reduced spacing
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 6;
-
+        // Title section
         doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
+
+        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 7;
+
+        doc.setFontSize(10);
         doc.text('MUSHAK-6.2', pageWidth / 2, yPosition, { align: 'center' });
         yPosition += 5;
 
@@ -529,28 +532,29 @@ export function generateMushok62PDF(data: Mushok62Data) {
 
         doc.text('[See clause (b) of sub-rule (1) of rule 40 and clause (a) of rule 41]',
             pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 6;
+        yPosition += 5;
     };
 
     const addTableHeader = () => {
         const startX = 10;
+        const headerHeight = 14; // Reduced from 20 to 14
         // Total = 277mm to fill entire width
         const colWidths = [15, 20, 55, 40, 32, 32, 30, 26, 27];
         let currentX = startX;
 
-        // Header background
-        doc.setFillColor(colors.headerBg[0], colors.headerBg[1], colors.headerBg[2]);
-        doc.rect(startX, yPosition, pageWidth - 20, 20, 'F');
+        // Header background - ensure color is set properly
+        doc.setFillColor(240, 240, 240);
+        doc.rect(startX, yPosition, pageWidth - 20, headerHeight, 'F');
 
         // Header borders
-        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.3);
-        doc.rect(startX, yPosition, pageWidth - 20, 20);
+        doc.rect(startX, yPosition, pageWidth - 20, headerHeight);
 
         // Header text
         doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+        doc.setTextColor(0, 0, 0);
 
         const headers = [
             'Sr.\nNo.\n(1)',
@@ -566,21 +570,21 @@ export function generateMushok62PDF(data: Mushok62Data) {
 
         headers.forEach((header, i) => {
             const lines = header.split('\n');
-            const lineHeight = 4;
-            const startY = yPosition + 5;
+            const lineHeight = 3.5;
+            const startY = yPosition + 4;
 
             lines.forEach((line, lineIndex) => {
                 doc.text(line, currentX + colWidths[i] / 2, startY + (lineIndex * lineHeight), { align: 'center' });
             });
 
             // Vertical lines
-            doc.line(currentX, yPosition, currentX, yPosition + 20);
+            doc.line(currentX, yPosition, currentX, yPosition + headerHeight);
             currentX += colWidths[i];
         });
 
         // Right border
-        doc.line(currentX, yPosition, currentX, yPosition + 20);
-        yPosition += 20;
+        doc.line(currentX, yPosition, currentX, yPosition + headerHeight);
+        yPosition += headerHeight;
     };
 
     const addTableRow = (rowData: string[], isTotal: boolean = false) => {
