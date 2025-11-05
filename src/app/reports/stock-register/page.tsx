@@ -106,65 +106,102 @@ export default function StockRegisterPage() {
   };
 
   const exportStockRegisterCSV = () => {
-    if (!data?.data) return;
+    if (!data?.data || data.data.length === 0) {
+      alert("No data to export");
+      return;
+    }
 
     const csvRows = [
       "Month,Item SKU,Item Name,Category,Unit,Opening Qty,Purchase Qty,Sales Qty,Adjust Qty,Closing Qty,Avg Unit Cost",
     ];
 
     data.data.forEach((item) => {
-      csvRows.push(
-        `${item.month},${item.item.sku},"${item.item.name}",${
-          item.item.category
-        },${item.item.unit},${item.opening_qty},${item.purchase_qty},${
-          item.sales_qty
-        },${item.adjust_qty},${item.closing_qty},${item.avg_unit_cost.toFixed(
-          2
-        )}`
-      );
+      const row = [
+        item.month,
+        item.item.sku || "",
+        `"${(item.item.name || "").replace(/"/g, '""')}"`, // Escape quotes
+        item.item.category || "",
+        item.item.unit || "",
+        item.opening_qty,
+        item.purchase_qty,
+        item.sales_qty,
+        item.adjust_qty,
+        item.closing_qty,
+        item.avg_unit_cost.toFixed(2),
+      ];
+      csvRows.push(row.join(","));
     });
 
     downloadCSV(
-      csvRows.join("\n"),
+      csvRows.join("\r\n"), // Use Windows line endings
       `Stock_Register_${selectedMonth || "All"}.csv`
     );
   };
 
   const exportInvoicesCSV = () => {
-    if (!data?.data) return;
+    if (!data?.data || data.data.length === 0) {
+      alert("No data to export");
+      return;
+    }
 
     const csvRows = [
       "Month,Item SKU,Item Name,Invoice No,Date,Customer,Qty Out,Price Excl,VAT 15%,Total Incl",
     ];
 
+    let totalInvoices = 0;
     data.data.forEach((item) => {
       item.out_invoices.forEach((invoice) => {
-        csvRows.push(
-          `${item.month},${item.item.sku},"${item.item.name}",${
-            invoice.invoice_no
-          },${invoice.date},"${invoice.customer}",${
-            invoice.qty_out
-          },${invoice.price_excl.toFixed(2)},${invoice.vat_15.toFixed(
-            2
-          )},${invoice.total_incl.toFixed(2)}`
-        );
+        const row = [
+          item.month,
+          item.item.sku || "",
+          `"${(item.item.name || "").replace(/"/g, '""')}"`,
+          invoice.invoice_no || "",
+          invoice.date || "",
+          `"${(invoice.customer || "").replace(/"/g, '""')}"`,
+          invoice.qty_out,
+          invoice.price_excl.toFixed(2),
+          invoice.vat_15.toFixed(2),
+          invoice.total_incl.toFixed(2),
+        ];
+        csvRows.push(row.join(","));
+        totalInvoices++;
       });
     });
 
+    if (totalInvoices === 0) {
+      alert("No invoices to export");
+      return;
+    }
+
     downloadCSV(
-      csvRows.join("\n"),
+      csvRows.join("\r\n"),
       `Stock_Invoices_${selectedMonth || "All"}.csv`
     );
   };
 
   const downloadCSV = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    // Add BOM for proper Excel UTF-8 support
+    const BOM = "\uFEFF";
+    const csvContent = BOM + content;
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
+    link.style.display = "none";
+
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   const getSummaryStats = () => {
