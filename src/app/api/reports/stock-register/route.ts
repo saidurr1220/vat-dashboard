@@ -62,17 +62,6 @@ export async function GET(request: NextRequest) {
 
       // Process each product
       for (const product of productsQuery.rows) {
-        // Get purchases for this product in this month
-        const purchasesQuery = await db.execute(sql`
-          SELECT 
-            COALESCE(SUM(qty), 0) as total_qty,
-            COALESCE(AVG(unit_price), 0) as avg_cost
-          FROM imports_boe
-          WHERE product_id = ${product.item_id}
-            AND EXTRACT(YEAR FROM boe_date) = ${parseInt(year)}
-            AND EXTRACT(MONTH FROM boe_date) = ${parseInt(monthNum)}
-        `);
-
         // Get sales for this product in this month
         const salesQuery = await db.execute(sql`
           SELECT COALESCE(SUM(sl.qty), 0) as total_qty
@@ -101,13 +90,12 @@ export async function GET(request: NextRequest) {
           ORDER BY s.dt
         `);
 
-        const purchase_qty = Number(purchasesQuery.rows[0]?.total_qty || 0);
         const sales_qty = Number(salesQuery.rows[0]?.total_qty || 0);
-        const avg_unit_cost = Number(purchasesQuery.rows[0]?.avg_cost || 0);
         const current_stock = Number(product.current_stock || 0);
 
-        // Simple calculation: opening = current - purchases + sales
-        const opening_qty = Math.max(0, current_stock - purchase_qty + sales_qty);
+        // For now: opening = current + sales (reverse calculation)
+        // In future, this should come from stock_ledger
+        const opening_qty = current_stock + sales_qty;
         const closing_qty = current_stock;
 
         results.push({
@@ -120,11 +108,11 @@ export async function GET(request: NextRequest) {
             unit: product.unit
           },
           opening_qty,
-          purchase_qty,
+          purchase_qty: 0, // Not available without product mapping in imports_boe
           sales_qty,
           adjust_qty: 0,
           closing_qty,
-          avg_unit_cost,
+          avg_unit_cost: 0, // Not available
           out_invoices: invoicesQuery.rows.map((inv: any) => ({
             date: new Date(inv.date).toISOString().split('T')[0],
             invoice_no: inv.invoice_no,
@@ -135,7 +123,7 @@ export async function GET(request: NextRequest) {
             total_incl: Number(inv.total_incl || 0)
           })),
           validation: {
-            warnings: [],
+            warnings: ['Purchase data not available - imports_boe table does not have product mapping'],
             errors: []
           }
         });
