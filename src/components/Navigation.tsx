@@ -18,6 +18,7 @@ const navigation = [
   },
   { name: "Sale Register 6.2", href: "/reports/sale-register-6-2", icon: "📋" },
   { name: "Mushok 6.10 (>2L)", href: "/reports/mushok-6-10", icon: "⚖️" },
+  { name: "Stock Register", href: "/reports/stock-register", icon: "📦" },
   { name: "VAT Reports", href: "/vat", icon: "📈" },
   { name: "VAT Management", href: "/vat/manage", icon: "⚖️" },
   { name: "Settings", href: "/settings", icon: "⚙️" },

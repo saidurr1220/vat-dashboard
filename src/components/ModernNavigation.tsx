@@ -57,6 +57,11 @@ const navigation = [
     href: "/reports/mushok-6-10",
     icon: Scale,
   },
+  {
+    name: "Stock Register",
+    href: "/reports/stock-register",
+    icon: Package,
+  },
   { name: "Comprehensive Reports", href: "/vat/reports", icon: Download },
   { name: "Monthly VAT", href: "/vat/monthly", icon: Calculator },
   { name: "Backup & Restore", href: "/admin/backup", icon: Database },
