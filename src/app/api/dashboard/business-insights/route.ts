@@ -135,8 +135,8 @@ export async function GET() {
         transactions: Number(currentMonth.rows[0]?.transactions || 0),
         customers: Number(currentMonth.rows[0]?.customers || 0),
         products: Number(currentMonth.rows[0]?.products || 0),
-        avgPerTransaction: currentMonth.rows[0]?.transactions > 0
-          ? Math.round(currentRev / Number(currentMonth.rows[0].transactions))
+        avgPerTransaction: Number(currentMonth.rows[0]?.transactions || 0) > 0
+          ? Math.round(currentRev / Number(currentMonth.rows[0]?.transactions || 1))
           : 0,
       },
       growth: {
