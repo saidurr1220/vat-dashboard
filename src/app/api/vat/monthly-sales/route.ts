@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 export async function GET() {
     try {
         // Get monthly sales summary from October 2022 onwards
+        // total_value contains gross amount (VAT included)
         const result = await db.execute(sql`
             SELECT 
                 EXTRACT(YEAR FROM dt) as year,

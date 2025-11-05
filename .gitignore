@@ -32,6 +32,10 @@ yarn-error.log*
 # npm cache
 .npm-cache/
 
+# lock files (keep only package-lock.json)
+pnpm-lock.yaml
+yarn.lock
+
 # data files (optional - remove if you want to commit them)
 data/
 *.json
@@ -39,6 +43,35 @@ data/
 !package-lock.json
 !components.json
 !tsconfig.json
+!drizzle.config.json
+!vercel.json
+
+# test files
+test-*.csv
+test-*.js
+fix-*.js
+
+# documentation (keep only README.md)
+*_IMPLEMENTATION.md
+*_FIX*.md
+*_FEATURE*.md
+*_REPORT.md
+*_REVIEW.md
+*_GUIDE.md
+*_COMMANDS.md
+*_SETUP.md
+*_STATUS.md
+*_PLAN.md
+*_AUDIT*.md
+*_FIXES.md
+*_ADDED.md
+*_UPDATE.md
+*_TROUBLESHOOTING.md
+update-env-template.txt
+
+# temporary Excel files
+~$*.xlsx
+~$*.xls
 
 # vercel
 .vercel

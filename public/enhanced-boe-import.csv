@@ -1,7 +1,0 @@
-boe_date,boe_no,item_no,description,hs_code,base_value,sd_value,unit,qty,purchase_category,month
-2025-10-15,BOE123456,1,Footwear - Sports Shoes,6403.99.00,50000,15000,Pair,100,Footwear,October
-2025-10-15,BOE123456,2,Table Fan - Ceiling Fan,8414.51.00,25000,8000,Pc,50,Electronics,October
-2025-10-15,BOE123456,3,Mattress - Foam,9404.90.00,15000,5000,Pc,20,Furniture,October
-2025-10-15,BOE123456,4,Mobile Phone,8517.62.00,80000,25000,Pc,10,Electronics,October
-2025-10-20,BOE789012,1,Laboratory Equipment,9027.50.00,500000,0,Pc,1,Medical,October
-2025-10-20,BOE789012,2,Diagnostic Reagents,3822.00.00,15000,0,Test,240,Medical,October
