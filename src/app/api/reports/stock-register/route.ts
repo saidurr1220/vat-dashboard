@@ -25,81 +25,60 @@ export async function GET(request: NextRequest) {
         ? sql`AND p.category = ${category}`
         : sql``;
 
-      // Get stock movements from stock_ledger
-      const stockMovements = await db.execute(sql`
-        SELECT 
+      // Get all products that have either imports or sales in this month
+      const productsQuery = await db.execute(sql`
+        SELECT DISTINCT
           p.id as item_id,
           p.sku as item_sku,
           p.name as item_name,
           p.category,
           p.unit,
-          p.stock_on_hand as current_stock,
-          
-          -- Opening stock (before this month)
-          COALESCE((
-            SELECT 
-              SUM(COALESCE(sl.qty_in::numeric, 0) - COALESCE(sl.qty_out::numeric, 0))
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-              AND sl.dt < DATE_TRUNC('month', TO_DATE(${targetMonth} || '-01', 'YYYY-MM-DD'))
-          ), 0) as opening_qty,
-          
-          -- Purchases this month (qty_in from IMPORT ref_type)
-          COALESCE((
-            SELECT SUM(sl.qty_in::numeric)
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-              AND sl.ref_type = 'IMPORT'
-              AND EXTRACT(YEAR FROM sl.dt) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM sl.dt) = ${parseInt(monthNum)}
-          ), 0) as purchase_qty,
-          
-          -- Sales this month (qty_out from SALE ref_type)
-          COALESCE((
-            SELECT SUM(sl.qty_out::numeric)
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-              AND sl.ref_type = 'SALE'
-              AND EXTRACT(YEAR FROM sl.dt) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM sl.dt) = ${parseInt(monthNum)}
-          ), 0) as sales_qty,
-          
-          -- Adjustments this month (ADJUST ref_type)
-          COALESCE((
-            SELECT SUM(COALESCE(sl.qty_in::numeric, 0) - COALESCE(sl.qty_out::numeric, 0))
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-              AND sl.ref_type = 'ADJUST'
-              AND EXTRACT(YEAR FROM sl.dt) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM sl.dt) = ${parseInt(monthNum)}
-          ), 0) as adjust_qty,
-          
-          -- Average unit cost
-          COALESCE((
-            SELECT AVG(sl.unit_cost_ex_vat::numeric)
-            FROM stock_ledger sl
-            WHERE sl.product_id = p.id
-              AND sl.ref_type = 'IMPORT'
-              AND sl.unit_cost_ex_vat IS NOT NULL
-              AND EXTRACT(YEAR FROM sl.dt) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM sl.dt) = ${parseInt(monthNum)}
-          ), 0) as avg_unit_cost
-          
+          p.stock_on_hand as current_stock
         FROM products p
-        WHERE EXISTS (
-          SELECT 1 FROM stock_ledger sl
-          WHERE sl.product_id = p.id
-            AND EXTRACT(YEAR FROM sl.dt) = ${parseInt(year)}
-            AND EXTRACT(MONTH FROM sl.dt) = ${parseInt(monthNum)}
+        WHERE (
+          EXISTS (
+            SELECT 1 FROM imports_boe ib
+            WHERE ib.product_id = p.id
+              AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
+          )
+          OR EXISTS (
+            SELECT 1 FROM sales_lines sl
+            JOIN sales s ON sl.sale_id = s.id
+            WHERE sl.product_id = p.id
+              AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+              AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+          )
         )
         ${categoryFilter}
         ORDER BY p.name
       `);
 
-      console.log(`Found ${stockMovements.rows.length} products with movements`);
+      console.log(`Found ${productsQuery.rows.length} products with activity`);
 
       // Process each product
-      for (const row of stockMovements.rows) {
+      for (const product of productsQuery.rows) {
+        // Get purchases for this product in this month
+        const purchasesQuery = await db.execute(sql`
+          SELECT 
+            COALESCE(SUM(qty), 0) as total_qty,
+            COALESCE(AVG(unit_price), 0) as avg_cost
+          FROM imports_boe
+          WHERE product_id = ${product.item_id}
+            AND EXTRACT(YEAR FROM boe_date) = ${parseInt(year)}
+            AND EXTRACT(MONTH FROM boe_date) = ${parseInt(monthNum)}
+        `);
+
+        // Get sales for this product in this month
+        const salesQuery = await db.execute(sql`
+          SELECT COALESCE(SUM(sl.qty), 0) as total_qty
+          FROM sales_lines sl
+          JOIN sales s ON sl.sale_id = s.id
+          WHERE sl.product_id = ${product.item_id}
+            AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+            AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+        `);
+
         // Get sales invoice details
         const invoicesQuery = await db.execute(sql`
           SELECT 
@@ -112,33 +91,36 @@ export async function GET(request: NextRequest) {
             sl.line_total_calc as total_incl
           FROM sales_lines sl
           JOIN sales s ON sl.sale_id = s.id
-          WHERE sl.product_id = ${row.item_id}
+          WHERE sl.product_id = ${product.item_id}
             AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
             AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
           ORDER BY s.dt
         `);
 
-        const opening_qty = Number(row.opening_qty || 0);
-        const purchase_qty = Number(row.purchase_qty || 0);
-        const sales_qty = Number(row.sales_qty || 0);
-        const adjust_qty = Number(row.adjust_qty || 0);
-        const closing_qty = opening_qty + purchase_qty - sales_qty + adjust_qty;
+        const purchase_qty = Number(purchasesQuery.rows[0]?.total_qty || 0);
+        const sales_qty = Number(salesQuery.rows[0]?.total_qty || 0);
+        const avg_unit_cost = Number(purchasesQuery.rows[0]?.avg_cost || 0);
+        const current_stock = Number(product.current_stock || 0);
+
+        // Simple calculation: opening = current - purchases + sales
+        const opening_qty = Math.max(0, current_stock - purchase_qty + sales_qty);
+        const closing_qty = current_stock;
 
         results.push({
           month: targetMonth,
           item: {
-            id: row.item_id,
-            sku: row.item_sku,
-            name: row.item_name,
-            category: row.category,
-            unit: row.unit
+            id: product.item_id,
+            sku: product.item_sku,
+            name: product.item_name,
+            category: product.category,
+            unit: product.unit
           },
           opening_qty,
           purchase_qty,
           sales_qty,
-          adjust_qty,
+          adjust_qty: 0,
           closing_qty,
-          avg_unit_cost: Number(row.avg_unit_cost || 0),
+          avg_unit_cost,
           out_invoices: invoicesQuery.rows.map((inv: any) => ({
             date: new Date(inv.date).toISOString().split('T')[0],
             invoice_no: inv.invoice_no,
@@ -172,7 +154,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Failed to generate stock register',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
