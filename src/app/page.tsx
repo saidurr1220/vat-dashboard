@@ -12,7 +12,7 @@ import {
   Users,
   BarChart3,
 } from "lucide-react";
-import MonthlyStockAnalysis from "@/components/MonthlyStockAnalysis";
+import BusinessInsightsDashboard from "@/components/BusinessInsightsDashboard";
 
 // Force dynamic for real-time data
 export const dynamic = "force-dynamic";
@@ -35,9 +35,9 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Monthly Stock Analysis */}
+        {/* Business Insights Dashboard */}
         <div className="mb-6">
-          <MonthlyStockAnalysis />
+          <BusinessInsightsDashboard />
         </div>
 
         {/* Quick Actions Grid */}
