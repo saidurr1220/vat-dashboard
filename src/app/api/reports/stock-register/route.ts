@@ -20,50 +20,45 @@ export async function GET(request: NextRequest) {
       const [year, monthNum] = targetMonth.split('-');
       console.log(`Processing month: ${targetMonth} (Year: ${year}, Month: ${monthNum})`);
 
-      // Build category filter
-      const categoryFilter = category && category !== 'all'
-        ? sql`AND p.category = ${category}`
-        : sql``;
+      // Get all products that have sales in this month
+      let productsQuery;
 
-      // First check if we have any data for this month
-      const dataCheck = await db.execute(sql`
-        SELECT 
-          (SELECT COUNT(*) FROM sales s WHERE EXTRACT(YEAR FROM s.dt) = ${parseInt(year)} AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}) as sales_count,
-          (SELECT COUNT(*) FROM imports_boe ib WHERE EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)} AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}) as imports_count
-      `);
+      if (category && category !== 'all') {
+        productsQuery = await db.execute(sql`
+          SELECT DISTINCT
+            p.id as item_id,
+            p.sku as item_sku,
+            p.name as item_name,
+            p.category,
+            p.unit,
+            p.stock_on_hand as current_stock
+          FROM products p
+          JOIN sales_lines sl ON p.id = sl.product_id
+          JOIN sales s ON sl.sale_id = s.id
+          WHERE EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+            AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+            AND p.category = ${category}
+          ORDER BY p.name
+        `);
+      } else {
+        productsQuery = await db.execute(sql`
+          SELECT DISTINCT
+            p.id as item_id,
+            p.sku as item_sku,
+            p.name as item_name,
+            p.category,
+            p.unit,
+            p.stock_on_hand as current_stock
+          FROM products p
+          JOIN sales_lines sl ON p.id = sl.product_id
+          JOIN sales s ON sl.sale_id = s.id
+          WHERE EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
+            AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
+          ORDER BY p.name
+        `);
+      }
 
-      console.log(`Data check for ${targetMonth}:`, dataCheck.rows[0]);
-
-      // Get all products that have either imports or sales in this month
-      const productsQuery = await db.execute(sql`
-        SELECT DISTINCT
-          p.id as item_id,
-          p.sku as item_sku,
-          p.name as item_name,
-          p.category,
-          p.unit,
-          p.stock_on_hand as current_stock
-        FROM products p
-        WHERE (
-          EXISTS (
-            SELECT 1 FROM imports_boe ib
-            WHERE ib.product_id = p.id
-              AND EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}
-          )
-          OR EXISTS (
-            SELECT 1 FROM sales_lines sl
-            JOIN sales s ON sl.sale_id = s.id
-            WHERE sl.product_id = p.id
-              AND EXTRACT(YEAR FROM s.dt) = ${parseInt(year)}
-              AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}
-          )
-        )
-        ${categoryFilter}
-        ORDER BY p.name
-      `);
-
-      console.log(`Found ${productsQuery.rows.length} products with activity`);
+      console.log(`Found ${productsQuery.rows.length} products with sales`);
 
       // Process each product
       for (const product of productsQuery.rows) {
