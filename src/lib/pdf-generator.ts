@@ -495,44 +495,41 @@ export function generateMushok62PDF(data: Mushok62Data) {
     };
 
     const addHeader = () => {
-        // Title section
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 6;
-
-        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 10;
-
+        // Title section - reduced spacing
         doc.setFontSize(12);
-        doc.text('MUSHAK-6.2', pageWidth / 2, yPosition, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.text('NATIONAL BOARD OF REVENUE', pageWidth / 2, yPosition, { align: 'center' });
         yPosition += 6;
+
+        doc.setFontSize(11);
+        doc.text('MUSHAK-6.2', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 5;
 
         // Period
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'];
         const monthName = monthNames[parseInt(data.period.month) - 1];
 
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${data.settings?.taxpayerName || ''} BIN: ${data.settings?.bin || ''} - ${monthName} ${data.period.year}`,
+        doc.text(`BIN: ${data.settings?.bin || '004223577-0205'} - ${monthName} ${data.period.year}`,
             pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 6;
-
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('SALES REGISTER (Bikroy Hisab Pustak)', pageWidth / 2, yPosition, { align: 'center' });
         yPosition += 5;
 
-        doc.setFontSize(8);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SALES REGISTER (Bikroy Hisab Pustak)', pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 4;
+
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.text('(Applicable for registered or enlisted persons engaged in processing of goods or services)',
             pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 4;
+        yPosition += 3;
 
         doc.text('[See clause (b) of sub-rule (1) of rule 40 and clause (a) of rule 41]',
             pageWidth / 2, yPosition, { align: 'center' });
-        yPosition += 8;
+        yPosition += 6;
     };
 
     const addTableHeader = () => {
@@ -696,14 +693,14 @@ export function generateMushok62PDF(data: Mushok62Data) {
         addTableRow(totalRow, true);
     }
 
-    // Add summary section
-    yPosition += 10;
-    checkPageBreak(30);
+    // Add summary section - increased spacing to avoid overlap
+    yPosition += 15;
+    checkPageBreak(35);
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('SUMMARY', 10, yPosition);
-    yPosition += 8;
+    yPosition += 6;
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
