@@ -25,6 +25,15 @@ export async function GET(request: NextRequest) {
         ? sql`AND p.category = ${category}`
         : sql``;
 
+      // First check if we have any data for this month
+      const dataCheck = await db.execute(sql`
+        SELECT 
+          (SELECT COUNT(*) FROM sales s WHERE EXTRACT(YEAR FROM s.dt) = ${parseInt(year)} AND EXTRACT(MONTH FROM s.dt) = ${parseInt(monthNum)}) as sales_count,
+          (SELECT COUNT(*) FROM imports_boe ib WHERE EXTRACT(YEAR FROM ib.boe_date) = ${parseInt(year)} AND EXTRACT(MONTH FROM ib.boe_date) = ${parseInt(monthNum)}) as imports_count
+      `);
+
+      console.log(`Data check for ${targetMonth}:`, dataCheck.rows[0]);
+
       // Get all products that have either imports or sales in this month
       const productsQuery = await db.execute(sql`
         SELECT DISTINCT
