@@ -12,8 +12,8 @@ async function updateAdmin() {
             nodeEnv: process.env.NODE_ENV
         });
 
-        const adminEmail = 'saidurr1256@gmail.com';
-        const adminPassword = 'Rahman2155';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'change-me';
 
         console.log('Updating admin user:', adminEmail);
 

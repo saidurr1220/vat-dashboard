@@ -10,8 +10,8 @@ async function testTreasuryAPI() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                email: 'saidurr1256@gmail.com',
-                password: 'Rahman2155'
+                email: process.env.ADMIN_EMAIL || 'admin@example.com',
+                password: process.env.ADMIN_PASSWORD || 'change-me'
             })
         });
 
