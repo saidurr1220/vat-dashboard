@@ -16,6 +16,7 @@ import {
   Upload,
   Calendar,
 } from "lucide-react";
+import AuthGuard from "@/components/AuthGuard";
 
 interface PurchaseRecord {
   id: number;
@@ -328,9 +329,11 @@ export default function VATRegister61Page() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
+      <AuthGuard requireAuth={true}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      </AuthGuard>
     );
   }
 
@@ -347,481 +350,490 @@ export default function VATRegister61Page() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-full mx-auto space-y-6">
-        <div className="text-center mb-8 print:mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">
-            মূসক ৬.১ - ক্রয় রেজিস্টার
-          </h1>
-          <p className="text-lg text-gray-600 mt-2">
-            Purchase Register (Imports) - {monthName}
-          </p>
-        </div>
+    <AuthGuard requireAuth={true}>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-full mx-auto space-y-6">
+          <div className="text-center mb-8 print:mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              মূসক ৬.১ - ক্রয় রেজিস্টার
+            </h1>
+            <p className="text-lg text-gray-600 mt-2">
+              Purchase Register (Imports) - {monthName}
+            </p>
+          </div>
 
-        {/* Month/Year Selector */}
-        <Card className="print:hidden">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-gray-500" />
-                  <Label className="text-sm font-medium text-gray-700">
-                    Month:
-                  </Label>
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="01">January</option>
-                    <option value="02">February</option>
-                    <option value="03">March</option>
-                    <option value="04">April</option>
-                    <option value="05">May</option>
-                    <option value="06">June</option>
-                    <option value="07">July</option>
-                    <option value="08">August</option>
-                    <option value="09">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Year:
-                  </Label>
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {[0, 1, 2, 3, 4].map((i) => {
-                      const year = (currentDate.getFullYear() - i).toString();
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-2 items-center">
-                <Button onClick={() => setShowAddForm(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Import
-                </Button>
-                <Button onClick={downloadCSVTemplate} variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  CSV Template
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={uploading}
-                  asChild={!uploading}
-                >
-                  <label className="cursor-pointer">
-                    {uploading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 mr-2" />
-                    )}
-                    Import CSV
-                    <input
-                      type="file"
-                      accept=".csv"
-                      className="hidden"
-                      onChange={handleCSVUpload}
-                      disabled={uploading}
-                    />
-                  </label>
-                </Button>
-                <Button onClick={exportToPDF} variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {showAddForm && (
+          {/* Month/Year Selector */}
           <Card className="print:hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  {editingId ? "Edit Import (BOE)" : "Add New Import (BOE)"}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingId(null);
-                    resetForm();
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={handleSaveImport}
-                className="grid grid-cols-3 gap-4"
-              >
-                <div>
-                  <Label>BOE Number *</Label>
-                  <Input
-                    required
-                    value={formData.boeNo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, boeNo: e.target.value })
-                    }
-                  />
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-gray-500" />
+                    <Label className="text-sm font-medium text-gray-700">
+                      Month:
+                    </Label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="01">January</option>
+                      <option value="02">February</option>
+                      <option value="03">March</option>
+                      <option value="04">April</option>
+                      <option value="05">May</option>
+                      <option value="06">June</option>
+                      <option value="07">July</option>
+                      <option value="08">August</option>
+                      <option value="09">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Year:
+                    </Label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {[0, 1, 2, 3, 4].map((i) => {
+                        const year = (currentDate.getFullYear() - i).toString();
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <Label>BOE Date *</Label>
-                  <Input
-                    type="date"
-                    required
-                    value={formData.boeDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, boeDate: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Office Code</Label>
-                  <Input
-                    value={formData.officeCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, officeCode: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Item No *</Label>
-                  <Input
-                    required
-                    value={formData.itemNo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, itemNo: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>HS Code</Label>
-                  <Input
-                    value={formData.hsCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, hsCode: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Description *</Label>
-                  <Input
-                    required
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.qty}
-                    onChange={(e) =>
-                      setFormData({ ...formData, qty: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Unit</Label>
-                  <Input
-                    value={formData.unit}
-                    onChange={(e) =>
-                      setFormData({ ...formData, unit: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Assessable Value</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.assessableValue}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        assessableValue: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Base VAT</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.baseVat}
-                    onChange={(e) =>
-                      setFormData({ ...formData, baseVat: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>SD</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.sd}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sd: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>VAT</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.vat}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vat: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>AT</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.at}
-                    onChange={(e) =>
-                      setFormData({ ...formData, at: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="col-span-3 flex gap-2 justify-end">
+
+                <div className="flex gap-2 items-center">
+                  <Button onClick={() => setShowAddForm(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Import
+                  </Button>
+                  <Button onClick={downloadCSVTemplate} variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    CSV Template
+                  </Button>
                   <Button
-                    type="button"
                     variant="outline"
+                    disabled={uploading}
+                    asChild={!uploading}
+                  >
+                    <label className="cursor-pointer">
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      Import CSV
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleCSVUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                  </Button>
+                  <Button onClick={exportToPDF} variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {showAddForm && (
+            <Card className="print:hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>
+                    {editingId ? "Edit Import (BOE)" : "Add New Import (BOE)"}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setShowAddForm(false);
                       setEditingId(null);
                       resetForm();
                     }}
                   >
-                    Cancel
+                    <X className="w-4 h-4" />
                   </Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
-                    {editingId ? "Update" : "Save"} Import
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form
+                  onSubmit={handleSaveImport}
+                  className="grid grid-cols-3 gap-4"
+                >
+                  <div>
+                    <Label>BOE Number *</Label>
+                    <Input
+                      required
+                      value={formData.boeNo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, boeNo: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>BOE Date *</Label>
+                    <Input
+                      type="date"
+                      required
+                      value={formData.boeDate}
+                      onChange={(e) =>
+                        setFormData({ ...formData, boeDate: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Office Code</Label>
+                    <Input
+                      value={formData.officeCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, officeCode: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Item No *</Label>
+                    <Input
+                      required
+                      value={formData.itemNo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, itemNo: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>HS Code</Label>
+                    <Input
+                      value={formData.hsCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, hsCode: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Description *</Label>
+                    <Input
+                      required
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.qty}
+                      onChange={(e) =>
+                        setFormData({ ...formData, qty: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Unit</Label>
+                    <Input
+                      value={formData.unit}
+                      onChange={(e) =>
+                        setFormData({ ...formData, unit: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Assessable Value</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.assessableValue}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          assessableValue: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Base VAT</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.baseVat}
+                      onChange={(e) =>
+                        setFormData({ ...formData, baseVat: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>SD</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.sd}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sd: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>VAT</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.vat}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vat: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>AT</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.at}
+                      onChange={(e) =>
+                        setFormData({ ...formData, at: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="col-span-3 flex gap-2 justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddForm(false);
+                        setEditingId(null);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={saving}>
+                      {saving ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      {editingId ? "Update" : "Save"} Import
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
 
-        <Card>
-          <CardHeader className="print:p-4">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 print:hidden" />
-              আমদানি ক্রয় (BOE Records) - {purchases.length} entries
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="print:p-2">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-xs">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      ক্রমিক
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      BOE নং
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      তারিখ
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      অফিস
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      পণ্যের বিবরণ
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
-                      HS Code
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      পরিমাণ
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      মূল্য
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      Base VAT
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      SD
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      VAT
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      AT
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
-                      মোট
-                    </th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 print:hidden">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {purchases.length === 0 ? (
+          <Card>
+            <CardHeader className="print:p-4">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 print:hidden" />
+                আমদানি ক্রয় (BOE Records) - {purchases.length} entries
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="print:p-2">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan={14} className="px-6 py-12 text-center">
-                        <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                        <p className="font-medium text-gray-500">
-                          এই মাসে কোন আমদানি নেই
-                        </p>
-                      </td>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        ক্রমিক
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        BOE নং
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        তারিখ
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        অফিস
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        পণ্যের বিবরণ
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">
+                        HS Code
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        পরিমাণ
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        মূল্য
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        Base VAT
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        SD
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        VAT
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        AT
+                      </th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500">
+                        মোট
+                      </th>
+                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 print:hidden">
+                        Actions
+                      </th>
                     </tr>
-                  ) : (
-                    purchases.map((item, index) => (
-                      <tr
-                        key={`purchase-${item.id}-${index}`}
-                        className="hover:bg-gray-50"
-                      >
-                        <td className="px-2 py-1 text-gray-900">{index + 1}</td>
-                        <td className="px-2 py-1 text-gray-900">
-                          {item.boe_no}
-                        </td>
-                        <td className="px-2 py-1 text-gray-600">
-                          {new Date(item.boe_date).toLocaleDateString("en-GB")}
-                        </td>
-                        <td className="px-2 py-1 text-gray-600">
-                          {item.office_code}
-                        </td>
-                        <td className="px-2 py-1 text-gray-900">
-                          {item.description}
-                        </td>
-                        <td className="px-2 py-1 text-gray-600">
-                          {item.hs_code}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-900">
-                          {Number(item.qty).toFixed(2)} {item.unit}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-900">
-                          {Number(item.assessable_value).toLocaleString(
-                            "en-IN"
-                          )}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-600">
-                          {Number(item.base_vat).toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-600">
-                          {Number(item.sd).toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-2 py-1 text-right text-green-600 font-medium">
-                          {Number(item.vat).toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-600">
-                          {Number(item.at).toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-2 py-1 text-right text-gray-900 font-medium">
-                          {Number(item.total_value).toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-2 py-1 text-center print:hidden">
-                          <div className="flex gap-1 justify-center">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEdit(item)}
-                              className="h-7 w-7 p-0"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDelete(item.id)}
-                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {purchases.length === 0 ? (
+                      <tr>
+                        <td colSpan={14} className="px-6 py-12 text-center">
+                          <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                          <p className="font-medium text-gray-500">
+                            এই মাসে কোন আমদানি নেই
+                          </p>
                         </td>
                       </tr>
-                    ))
-                  )}
-                  {purchases.length > 0 && (
-                    <tr className="bg-blue-50 font-bold">
-                      <td
-                        colSpan={7}
-                        className="px-2 py-2 text-right text-gray-900"
-                      >
-                        মোট:
-                      </td>
-                      <td className="px-2 py-2 text-right text-gray-900">
-                        ৳{totals.assessableValue.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-2 py-2 text-right text-gray-900">
-                        ৳{totals.baseVat.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-2 py-2 text-right text-gray-900">
-                        ৳{totals.sd.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-2 py-2 text-right text-green-700">
-                        ৳{totals.vat.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-2 py-2 text-right text-gray-900">
-                        ৳{totals.at.toLocaleString("en-IN")}
-                      </td>
-                      <td className="px-2 py-2 text-right text-gray-900">
-                        ৳{totals.totalValue.toLocaleString("en-IN")}
-                      </td>
-                      <td className="print:hidden"></td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                    ) : (
+                      purchases.map((item, index) => (
+                        <tr
+                          key={`purchase-${item.id}-${index}`}
+                          className="hover:bg-gray-50"
+                        >
+                          <td className="px-2 py-1 text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-2 py-1 text-gray-900">
+                            {item.boe_no}
+                          </td>
+                          <td className="px-2 py-1 text-gray-600">
+                            {new Date(item.boe_date).toLocaleDateString(
+                              "en-GB"
+                            )}
+                          </td>
+                          <td className="px-2 py-1 text-gray-600">
+                            {item.office_code}
+                          </td>
+                          <td className="px-2 py-1 text-gray-900">
+                            {item.description}
+                          </td>
+                          <td className="px-2 py-1 text-gray-600">
+                            {item.hs_code}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-900">
+                            {Number(item.qty).toFixed(2)} {item.unit}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-900">
+                            {Number(item.assessable_value).toLocaleString(
+                              "en-IN"
+                            )}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-600">
+                            {Number(item.base_vat).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-600">
+                            {Number(item.sd).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-2 py-1 text-right text-green-600 font-medium">
+                            {Number(item.vat).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-600">
+                            {Number(item.at).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-2 py-1 text-right text-gray-900 font-medium">
+                            {Number(item.total_value).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-2 py-1 text-center print:hidden">
+                            <div className="flex gap-1 justify-center">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEdit(item)}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDelete(item.id)}
+                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                    {purchases.length > 0 && (
+                      <tr className="bg-blue-50 font-bold">
+                        <td
+                          colSpan={7}
+                          className="px-2 py-2 text-right text-gray-900"
+                        >
+                          মোট:
+                        </td>
+                        <td className="px-2 py-2 text-right text-gray-900">
+                          ৳{totals.assessableValue.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-2 py-2 text-right text-gray-900">
+                          ৳{totals.baseVat.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-2 py-2 text-right text-gray-900">
+                          ৳{totals.sd.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-2 py-2 text-right text-green-700">
+                          ৳{totals.vat.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-2 py-2 text-right text-gray-900">
+                          ৳{totals.at.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-2 py-2 text-right text-gray-900">
+                          ৳{totals.totalValue.toLocaleString("en-IN")}
+                        </td>
+                        <td className="print:hidden"></td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
+        <style jsx global>{`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .print\\:block,
+            .print\\:block * {
+              visibility: visible;
+            }
+            table {
+              page-break-inside: auto;
+            }
+            tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
           }
-          .print\\:block,
-          .print\\:block * {
-            visibility: visible;
-          }
-          table {
-            page-break-inside: auto;
-          }
-          tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-          }
-        }
-      `}</style>
-    </div>
+        `}</style>
+      </div>
+    </AuthGuard>
   );
 }

@@ -38,6 +38,7 @@ import {
   Package,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import AuthGuard from "@/components/AuthGuard";
 
 interface ReportData {
   period: {
@@ -213,569 +214,585 @@ export default function ComprehensiveVATReports() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <FileText className="w-8 h-8 text-white" />
+    <AuthGuard requireAuth={true}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <FileText className="w-8 h-8 text-white" />
+              </div>
             </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Comprehensive VAT Reports
+            </h1>
+            <p className="text-gray-600 mt-2 flex items-center justify-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Complete audit trail and tax compliance reports
+            </p>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Comprehensive VAT Reports
-          </h1>
-          <p className="text-gray-600 mt-2 flex items-center justify-center gap-2">
-            <Building2 className="w-4 h-4" />
-            Complete audit trail and tax compliance reports
-          </p>
-        </div>
 
-        {/* Filters */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Report Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label>Report Type</Label>
-                <Select
-                  value={filters.reportType}
-                  onValueChange={(value) =>
-                    setFilters({ ...filters, reportType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly Report</SelectItem>
-                    <SelectItem value="yearly">Yearly Summary</SelectItem>
-                    <SelectItem value="custom">Custom Period</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Year</Label>
-                <Select
-                  value={filters.year.toString()}
-                  onValueChange={(value) =>
-                    setFilters({ ...filters, year: parseInt(value) })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[2022, 2023, 2024, 2025].map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {filters.reportType === "monthly" && (
+          {/* Filters */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Report Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label>Month</Label>
+                  <Label>Report Type</Label>
                   <Select
-                    value={filters.month.toString()}
+                    value={filters.reportType}
                     onValueChange={(value) =>
-                      setFilters({ ...filters, month: parseInt(value) })
+                      setFilters({ ...filters, reportType: value })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {monthNames.map((month, index) => (
-                        <SelectItem
-                          key={index + 1}
-                          value={(index + 1).toString()}
-                        >
-                          {month}
+                      <SelectItem value="monthly">Monthly Report</SelectItem>
+                      <SelectItem value="yearly">Yearly Summary</SelectItem>
+                      <SelectItem value="custom">Custom Period</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Year</Label>
+                  <Select
+                    value={filters.year.toString()}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, year: parseInt(value) })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2022, 2023, 2024, 2025].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
 
-              {filters.reportType === "custom" && (
-                <>
+                {filters.reportType === "monthly" && (
                   <div>
-                    <Label>Start Date</Label>
-                    <Input
-                      type="date"
-                      value={filters.startDate}
-                      onChange={(e) =>
-                        setFilters({ ...filters, startDate: e.target.value })
+                    <Label>Month</Label>
+                    <Select
+                      value={filters.month.toString()}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, month: parseInt(value) })
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthNames.map((month, index) => (
+                          <SelectItem
+                            key={index + 1}
+                            value={(index + 1).toString()}
+                          >
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
-                    <Label>End Date</Label>
-                    <Input
-                      type="date"
-                      value={filters.endDate}
-                      onChange={(e) =>
-                        setFilters({ ...filters, endDate: e.target.value })
-                      }
-                    />
-                  </div>
-                </>
-              )}
+                )}
 
-              <div className="flex items-end gap-2">
-                <Button
-                  onClick={fetchReportData}
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
-                  Refresh
-                </Button>
-                <Button
-                  onClick={() => downloadPDF()}
-                  variant="outline"
-                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  PDF
-                </Button>
+                {filters.reportType === "custom" && (
+                  <>
+                    <div>
+                      <Label>Start Date</Label>
+                      <Input
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, startDate: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>End Date</Label>
+                      <Input
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, endDate: e.target.value })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-end gap-2">
+                  <Button
+                    onClick={fetchReportData}
+                    disabled={loading}
+                    className="flex-1"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Refresh
+                  </Button>
+                  <Button
+                    onClick={() => downloadPDF()}
+                    variant="outline"
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    PDF
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-gray-600">Loading comprehensive report...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Report Data */}
-        {!loading && reportData.length > 0 && (
-          <div className="space-y-8">
-            {reportData.map((data, index) => (
-              <Card
-                key={index}
-                className="border-0 shadow-xl bg-white/90 backdrop-blur-sm"
-              >
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      {data.period.monthName
-                        ? `${data.period.monthName} ${data.period.year}`
-                        : `Year ${data.period.year}`}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={`${getComplianceColor(
-                          data.summary.status
-                        )} flex items-center gap-1`}
-                      >
-                        {getStatusIcon(data.summary.status)}
-                        {data.summary.status.charAt(0).toUpperCase() +
-                          data.summary.status.slice(1)}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => downloadPDF(data.period)}
-                        className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                      >
-                        <FileDown className="w-3 h-3 mr-1" />
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="p-6">
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-blue-600 text-sm font-medium">
-                            Total Sales
-                          </p>
-                          <p className="text-2xl font-bold text-blue-900">
-                            {formatCurrencyToMillions(data.sales.grossAmount)}
-                          </p>
-                          <p className="text-xs text-blue-600">
-                            {data.sales.salesCount} transactions
-                          </p>
-                        </div>
-                        <DollarSign className="w-8 h-8 text-blue-600" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-green-600 text-sm font-medium">
-                            VAT Payable
-                          </p>
-                          <p className="text-2xl font-bold text-green-900">
-                            {formatCurrencyToMillions(data.vat.payable)}
-                          </p>
-                          <p className="text-xs text-green-600">
-                            {data.vat.rate * 100}% rate
-                          </p>
-                        </div>
-                        <Calculator className="w-8 h-8 text-green-600" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-purple-600 text-sm font-medium">
-                            Treasury Paid
-                          </p>
-                          <p className="text-2xl font-bold text-purple-900">
-                            {formatCurrencyToMillions(data.treasury.totalPaid)}
-                          </p>
-                          <p className="text-xs text-purple-600">
-                            {data.treasury.challanCount} challans
-                          </p>
-                        </div>
-                        <Banknote className="w-8 h-8 text-purple-600" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-orange-600 text-sm font-medium">
-                            Outstanding
-                          </p>
-                          <p className="text-2xl font-bold text-orange-900">
-                            {formatCurrencyToMillions(data.vat.outstanding)}
-                          </p>
-                          <p className="text-xs text-orange-600">
-                            After closing balance
-                          </p>
-                        </div>
-                        <AlertTriangle className="w-8 h-8 text-orange-600" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Closing Balance & Import Information */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {/* Closing Balance Details */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200">
-                      <h3 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Closing Balance (Import AT & VAT)
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-indigo-700">
-                            Available Balance:
-                          </span>
-                          <span className="font-medium text-indigo-900">
-                            {formatCurrencyToMillions(
-                              data.closingBalance.available
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-indigo-700">
-                            Used This Period:
-                          </span>
-                          <span className="font-medium text-indigo-900">
-                            {formatCurrencyToMillions(data.closingBalance.used)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-indigo-700">
-                            Current Addition:
-                          </span>
-                          <span className="font-medium text-indigo-900">
-                            {formatCurrencyToMillions(
-                              data.closingBalance.currentMonthAddition
-                            )}
-                          </span>
-                        </div>
-                        <div className="pt-2 border-t border-indigo-200">
-                          <div className="flex justify-between">
-                            <span className="text-indigo-700 font-medium">
-                              Net Available:
-                            </span>
-                            <span className="font-bold text-indigo-900">
-                              {formatCurrencyToMillions(
-                                data.closingBalance.available -
-                                  data.closingBalance.used
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Import Stage Information */}
-                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200">
-                      <h3 className="font-semibold text-teal-900 mb-3 flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        Import Stage Payments
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-teal-700">
-                            Import VAT Paid:
-                          </span>
-                          <span className="font-medium text-teal-900">
-                            {formatCurrencyToMillions(data.imports.totalVat)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-teal-700">
-                            Advance Tax (AT):
-                          </span>
-                          <span className="font-medium text-teal-900">
-                            {formatCurrencyToMillions(data.imports.totalAt)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-teal-700">Import Entries:</span>
-                          <span className="font-medium text-teal-900">
-                            {data.imports.importCount} BOE
-                          </span>
-                        </div>
-                        <div className="pt-2 border-t border-teal-200">
-                          <div className="flex justify-between">
-                            <span className="text-teal-700 font-medium">
-                              Total Import Payments:
-                            </span>
-                            <span className="font-bold text-teal-900">
-                              {formatCurrencyToMillions(
-                                data.imports.totalVat + data.imports.totalAt
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Detailed Tables */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Sales Breakdown */}
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4" />
-                        Sales Breakdown
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Gross Sales:</span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.sales.grossAmount)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Net Sales (Ex-VAT):
-                          </span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.sales.netAmount)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">VAT Amount:</span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.sales.vatAmount)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Average Sale Value:
-                          </span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.sales.avgSaleValue)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Total Transactions:
-                          </span>
-                          <span className="font-medium">
-                            {data.sales.salesCount}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Treasury Details */}
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Receipt className="w-4 h-4" />
-                        Treasury Payments
-                      </h3>
-                      {data.treasury.challans.length > 0 ? (
-                        <div className="space-y-2">
-                          {data.treasury.challans.map((challan, idx) => (
-                            <div
-                              key={idx}
-                              className="flex justify-between items-center text-sm bg-white p-2 rounded"
-                            >
-                              <div>
-                                <span className="font-medium">
-                                  {challan.tokenNo}
-                                </span>
-                                <div className="text-xs text-gray-500">
-                                  {challan.bank}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium">
-                                  {formatCurrencyToMillions(challan.amount)}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {new Date(challan.date).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500 text-sm">
-                          No treasury payments recorded
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Enhanced Compliance Status */}
-                  <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Enhanced Compliance Summary
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">VAT Payable:</span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.vat.payable)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Treasury Paid:</span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(data.vat.paid)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Closing Balance Used:
-                          </span>
-                          <span className="font-medium">
-                            {formatCurrencyToMillions(
-                              data.closingBalance.available
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex justify-between border-t pt-2">
-                          <span className="text-gray-600 font-medium">
-                            Total Coverage:
-                          </span>
-                          <span className="font-bold">
-                            {formatCurrencyToMillions(
-                              data.vat.paid + data.closingBalance.available
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Outstanding Balance:
-                          </span>
-                          <span
-                            className={`font-medium ${
-                              data.vat.outstanding > 0
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {formatCurrencyToMillions(data.vat.outstanding)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            Compliance Rate:
-                          </span>
-                          <span
-                            className={`font-medium ${
-                              data.summary.compliance >= 100
-                                ? "text-green-600"
-                                : "text-orange-600"
-                            }`}
-                          >
-                            {data.summary.compliance.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Status:</span>
-                          <Badge
-                            className={getComplianceColor(data.summary.status)}
-                          >
-                            {getStatusIcon(data.summary.status)}
-                            <span className="ml-1">
-                              {data.summary.status.charAt(0).toUpperCase() +
-                                data.summary.status.slice(1)}
-                            </span>
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* No Data State */}
-        {!loading && reportData.length === 0 && (
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No Report Data
-              </h3>
-              <p className="text-gray-600 mb-4">
-                No data available for the selected period. Try adjusting your
-                filters.
-              </p>
-              <Button onClick={fetchReportData} variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh Data
-              </Button>
             </CardContent>
           </Card>
-        )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+                <p className="text-gray-600">Loading comprehensive report...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Report Data */}
+          {!loading && reportData.length > 0 && (
+            <div className="space-y-8">
+              {reportData.map((data, index) => (
+                <Card
+                  key={index}
+                  className="border-0 shadow-xl bg-white/90 backdrop-blur-sm"
+                >
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5" />
+                        {data.period.monthName
+                          ? `${data.period.monthName} ${data.period.year}`
+                          : `Year ${data.period.year}`}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={`${getComplianceColor(
+                            data.summary.status
+                          )} flex items-center gap-1`}
+                        >
+                          {getStatusIcon(data.summary.status)}
+                          {data.summary.status.charAt(0).toUpperCase() +
+                            data.summary.status.slice(1)}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadPDF(data.period)}
+                          className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                        >
+                          <FileDown className="w-3 h-3 mr-1" />
+                          PDF
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-blue-600 text-sm font-medium">
+                              Total Sales
+                            </p>
+                            <p className="text-2xl font-bold text-blue-900">
+                              {formatCurrencyToMillions(data.sales.grossAmount)}
+                            </p>
+                            <p className="text-xs text-blue-600">
+                              {data.sales.salesCount} transactions
+                            </p>
+                          </div>
+                          <DollarSign className="w-8 h-8 text-blue-600" />
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-green-600 text-sm font-medium">
+                              VAT Payable
+                            </p>
+                            <p className="text-2xl font-bold text-green-900">
+                              {formatCurrencyToMillions(data.vat.payable)}
+                            </p>
+                            <p className="text-xs text-green-600">
+                              {data.vat.rate * 100}% rate
+                            </p>
+                          </div>
+                          <Calculator className="w-8 h-8 text-green-600" />
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-purple-600 text-sm font-medium">
+                              Treasury Paid
+                            </p>
+                            <p className="text-2xl font-bold text-purple-900">
+                              {formatCurrencyToMillions(
+                                data.treasury.totalPaid
+                              )}
+                            </p>
+                            <p className="text-xs text-purple-600">
+                              {data.treasury.challanCount} challans
+                            </p>
+                          </div>
+                          <Banknote className="w-8 h-8 text-purple-600" />
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-orange-600 text-sm font-medium">
+                              Outstanding
+                            </p>
+                            <p className="text-2xl font-bold text-orange-900">
+                              {formatCurrencyToMillions(data.vat.outstanding)}
+                            </p>
+                            <p className="text-xs text-orange-600">
+                              After closing balance
+                            </p>
+                          </div>
+                          <AlertTriangle className="w-8 h-8 text-orange-600" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Closing Balance & Import Information */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      {/* Closing Balance Details */}
+                      <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200">
+                        <h3 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Closing Balance (Import AT & VAT)
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-indigo-700">
+                              Available Balance:
+                            </span>
+                            <span className="font-medium text-indigo-900">
+                              {formatCurrencyToMillions(
+                                data.closingBalance.available
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-indigo-700">
+                              Used This Period:
+                            </span>
+                            <span className="font-medium text-indigo-900">
+                              {formatCurrencyToMillions(
+                                data.closingBalance.used
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-indigo-700">
+                              Current Addition:
+                            </span>
+                            <span className="font-medium text-indigo-900">
+                              {formatCurrencyToMillions(
+                                data.closingBalance.currentMonthAddition
+                              )}
+                            </span>
+                          </div>
+                          <div className="pt-2 border-t border-indigo-200">
+                            <div className="flex justify-between">
+                              <span className="text-indigo-700 font-medium">
+                                Net Available:
+                              </span>
+                              <span className="font-bold text-indigo-900">
+                                {formatCurrencyToMillions(
+                                  data.closingBalance.available -
+                                    data.closingBalance.used
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Import Stage Information */}
+                      <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200">
+                        <h3 className="font-semibold text-teal-900 mb-3 flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          Import Stage Payments
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-teal-700">
+                              Import VAT Paid:
+                            </span>
+                            <span className="font-medium text-teal-900">
+                              {formatCurrencyToMillions(data.imports.totalVat)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-teal-700">
+                              Advance Tax (AT):
+                            </span>
+                            <span className="font-medium text-teal-900">
+                              {formatCurrencyToMillions(data.imports.totalAt)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-teal-700">
+                              Import Entries:
+                            </span>
+                            <span className="font-medium text-teal-900">
+                              {data.imports.importCount} BOE
+                            </span>
+                          </div>
+                          <div className="pt-2 border-t border-teal-200">
+                            <div className="flex justify-between">
+                              <span className="text-teal-700 font-medium">
+                                Total Import Payments:
+                              </span>
+                              <span className="font-bold text-teal-900">
+                                {formatCurrencyToMillions(
+                                  data.imports.totalVat + data.imports.totalAt
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detailed Tables */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Sales Breakdown */}
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4" />
+                          Sales Breakdown
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Gross Sales:</span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(data.sales.grossAmount)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Net Sales (Ex-VAT):
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(data.sales.netAmount)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">VAT Amount:</span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(data.sales.vatAmount)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Average Sale Value:
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(
+                                data.sales.avgSaleValue
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Total Transactions:
+                            </span>
+                            <span className="font-medium">
+                              {data.sales.salesCount}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Treasury Details */}
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Receipt className="w-4 h-4" />
+                          Treasury Payments
+                        </h3>
+                        {data.treasury.challans.length > 0 ? (
+                          <div className="space-y-2">
+                            {data.treasury.challans.map((challan, idx) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between items-center text-sm bg-white p-2 rounded"
+                              >
+                                <div>
+                                  <span className="font-medium">
+                                    {challan.tokenNo}
+                                  </span>
+                                  <div className="text-xs text-gray-500">
+                                    {challan.bank}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-medium">
+                                    {formatCurrencyToMillions(challan.amount)}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {new Date(
+                                      challan.date
+                                    ).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">
+                            No treasury payments recorded
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Compliance Status */}
+                    <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4">
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Enhanced Compliance Summary
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">VAT Payable:</span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(data.vat.payable)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Treasury Paid:
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(data.vat.paid)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Closing Balance Used:
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrencyToMillions(
+                                data.closingBalance.available
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2">
+                            <span className="text-gray-600 font-medium">
+                              Total Coverage:
+                            </span>
+                            <span className="font-bold">
+                              {formatCurrencyToMillions(
+                                data.vat.paid + data.closingBalance.available
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Outstanding Balance:
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                data.vat.outstanding > 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              {formatCurrencyToMillions(data.vat.outstanding)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">
+                              Compliance Rate:
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                data.summary.compliance >= 100
+                                  ? "text-green-600"
+                                  : "text-orange-600"
+                              }`}
+                            >
+                              {data.summary.compliance.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Status:</span>
+                            <Badge
+                              className={getComplianceColor(
+                                data.summary.status
+                              )}
+                            >
+                              {getStatusIcon(data.summary.status)}
+                              <span className="ml-1">
+                                {data.summary.status.charAt(0).toUpperCase() +
+                                  data.summary.status.slice(1)}
+                              </span>
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* No Data State */}
+          {!loading && reportData.length === 0 && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardContent className="text-center py-12">
+                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Report Data
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  No data available for the selected period. Try adjusting your
+                  filters.
+                </p>
+                <Button onClick={fetchReportData} variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Data
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

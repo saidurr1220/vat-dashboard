@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import AuthGuard from "@/components/AuthGuard";
 
 interface Product {
   id: number;
@@ -90,10 +91,17 @@ export default function EditSalePage({
         if (saleRes.ok) {
           const saleData = await saleRes.json();
           setSale(saleData);
+
+          // Fix date timezone issue - use local date instead of UTC
+          const saleDate = new Date(saleData.dt || saleData.date);
+          const localDate = new Date(
+            saleDate.getTime() - saleDate.getTimezoneOffset() * 60000
+          )
+            .toISOString()
+            .split("T")[0];
+
           setFormData({
-            date: new Date(saleData.dt || saleData.date)
-              .toISOString()
-              .split("T")[0],
+            date: localDate,
             invoiceNo: saleData.invoiceNo,
             customer: saleData.customer,
             customerId: saleData.customerId || null,
@@ -345,271 +353,17 @@ export default function EditSalePage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Edit Sale
-                  </h1>
-                  <p className="text-gray-600">
-                    Update sales invoice #{sale.invoiceNo}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <Link
-              href={`/sales/${sale.id}`}
-              className="inline-flex items-center px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              Back to Sale
-            </Link>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Sale Header */}
-          <div className="bg-white rounded-lg shadow-lg border p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Sale Information
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <AuthGuard requireAuth={true}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Date *
-                </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Invoice No *
-                </label>
-                <input
-                  type="text"
-                  value={formData.invoiceNo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, invoiceNo: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                  placeholder="Invoice number"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Customer *
-                </label>
-                <select
-                  value={formData.customerId || ""}
-                  onChange={(e) => handleCustomerChange(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                >
-                  <option value="">Select customer</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name} {customer.phone && `(${customer.phone})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Amount Type
-                </label>
-                <select
-                  value={formData.amountType}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      amountType: e.target.value as "INCL" | "EXCL",
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                >
-                  <option value="EXCL">VAT Exclusive</option>
-                  <option value="INCL">VAT Inclusive</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 resize-none"
-                  placeholder="Additional notes"
-                  rows={2}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Add Products */}
-          <div className="bg-white rounded-lg shadow-lg border p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Add Products
-              </h2>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Product
-                </label>
-                <select
-                  value={selectedProductId || ""}
-                  onChange={(e) =>
-                    setSelectedProductId(Number(e.target.value) || null)
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                >
-                  <option value="">Select a product</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} - ৳
-                      {Number(product.sellExVat).toLocaleString()} per{" "}
-                      {product.unit}
-                      (Stock: {product.stockOnHand} {product.unit})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="w-full lg:w-32">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={qty}
-                  onChange={(e) => setQty(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
-                  placeholder="Qty"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={addSaleLine}
-                disabled={!selectedProductId || qty <= 0}
-                className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Add Product
-              </button>
-            </div>
-          </div>
-
-          {/* Sale Lines */}
-          {saleLines.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                        />
-                      </svg>
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Sale Items
-                    </h2>
-                  </div>
-                  <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-4 h-4 inline mr-1 text-gray-600"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -621,119 +375,249 @@ export default function EditSalePage({
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                       />
                     </svg>
-                    Edit quantity & price directly
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      Edit Sale
+                    </h1>
+                    <p className="text-gray-600">
+                      Update sales invoice #{sale.invoiceNo}
+                    </p>
                   </div>
                 </div>
               </div>
+              <Link
+                href={`/sales/${sale.id}`}
+                className="inline-flex items-center px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Back to Sale
+              </Link>
+            </div>
+          </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-900 text-white">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
-                        Unit
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
-                        Qty
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
-                        Unit Price
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
-                        Line Amount
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
-                    {saleLines.map((line, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {line.productName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {line.unit}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
-                          <input
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={line.qty}
-                            onChange={(e) =>
-                              updateSaleLineQty(index, Number(e.target.value))
-                            }
-                            className="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
-                          <div className="flex items-center justify-end">
-                            <span className="text-gray-500 mr-1">৳</span>
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={line.unitPrice}
-                              onChange={(e) =>
-                                updateSaleLinePrice(
-                                  index,
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-24 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
-                            />
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
-                          ৳{Number(line.lineAmount || 0).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => removeSaleLine(index)}
-                              className="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200"
-                              title="Remove item"
-                            >
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Sale Header */}
+            <div className="bg-white rounded-lg shadow-lg border p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Sale Information
+                </h2>
               </div>
 
-              {/* Totals */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="flex justify-end">
-                  <div className="w-80 space-y-3">
-                    <div className="flex justify-between text-sm font-medium">
-                      <span>Line Total:</span>
-                      <span>৳{subtotal.toLocaleString()}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, date: e.target.value })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Invoice No *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.invoiceNo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoiceNo: e.target.value })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                    placeholder="Invoice number"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Customer *
+                  </label>
+                  <select
+                    value={formData.customerId || ""}
+                    onChange={(e) => handleCustomerChange(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                  >
+                    <option value="">Select customer</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name}{" "}
+                        {customer.phone && `(${customer.phone})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Amount Type
+                  </label>
+                  <select
+                    value={formData.amountType}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        amountType: e.target.value as "INCL" | "EXCL",
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                  >
+                    <option value="EXCL">VAT Exclusive</option>
+                    <option value="INCL">VAT Inclusive</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Notes
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 resize-none"
+                    placeholder="Additional notes"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Add Products */}
+            <div className="bg-white rounded-lg shadow-lg border p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Add Products
+                </h2>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Product
+                  </label>
+                  <select
+                    value={selectedProductId || ""}
+                    onChange={(e) =>
+                      setSelectedProductId(Number(e.target.value) || null)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                  >
+                    <option value="">Select a product</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} - ৳
+                        {Number(product.sellExVat).toLocaleString()} per{" "}
+                        {product.unit}
+                        (Stock: {product.stockOnHand} {product.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="w-full lg:w-32">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={qty}
+                    onChange={(e) => setQty(Number(e.target.value))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200"
+                    placeholder="Qty"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addSaleLine}
+                  disabled={!selectedProductId || qty <= 0}
+                  className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Add Product
+                </button>
+              </div>
+            </div>
+
+            {/* Sale Lines */}
+            {saleLines.length > 0 && (
+              <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                      </div>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Sale Items
+                      </h2>
                     </div>
-                    <div className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200">
                       <svg
                         className="w-4 h-4 inline mr-1 text-gray-600"
                         fill="none"
@@ -744,62 +628,189 @@ export default function EditSalePage({
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
-                      Final VAT calculation will be done when saving. This is
-                      just a preview based on current line items.
+                      Edit quantity & price directly
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-900 text-white">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                          Unit
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
+                          Qty
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
+                          Unit Price
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
+                          Line Amount
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {saleLines.map((line, index) => (
+                        <tr
+                          key={index}
+                          className="hover:bg-gray-50 transition-colors duration-150"
+                        >
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            {line.productName}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {line.unit}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={line.qty}
+                              onChange={(e) =>
+                                updateSaleLineQty(index, Number(e.target.value))
+                              }
+                              className="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
+                            <div className="flex items-center justify-end">
+                              <span className="text-gray-500 mr-1">৳</span>
+                              <input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value={line.unitPrice}
+                                onChange={(e) =>
+                                  updateSaleLinePrice(
+                                    index,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-24 text-right border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
+                            ৳{Number(line.lineAmount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm font-medium">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => removeSaleLine(index)}
+                                className="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200"
+                                title="Remove item"
+                              >
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Totals */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                  <div className="flex justify-end">
+                    <div className="w-80 space-y-3">
+                      <div className="flex justify-between text-sm font-medium">
+                        <span>Line Total:</span>
+                        <span>৳{subtotal.toLocaleString()}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+                        <svg
+                          className="w-4 h-4 inline mr-1 text-gray-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Final VAT calculation will be done when saving. This is
+                        just a preview based on current line items.
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Submit */}
-          <div className="flex flex-col sm:flex-row justify-end gap-4">
-            <Link
-              href={`/sales/${sale.id}`}
-              className="inline-flex items-center justify-center px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={submitting || saleLines.length === 0}
-              className="inline-flex items-center justify-center px-8 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              {submitting ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Updating Sale...
-                </>
-              ) : (
-                "Update Sale"
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Submit */}
+            <div className="flex flex-col sm:flex-row justify-end gap-4">
+              <Link
+                href={`/sales/${sale.id}`}
+                className="inline-flex items-center justify-center px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={submitting || saleLines.length === 0}
+                className="inline-flex items-center justify-center px-8 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                {submitting ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Updating Sale...
+                  </>
+                ) : (
+                  "Update Sale"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
