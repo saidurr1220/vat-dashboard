@@ -830,13 +830,15 @@ export function generateMushok610PDF(data: Mushok610Data) {
         doc.text(`BIN: ${data.settings?.bin || '004223577-0205'}`, pageWidth - 60, yPosition);
         yPosition += 5;
 
-        // Proprietor information
+        // Proprietor information - properly formatted
         doc.setFont('helvetica', 'bold');
         doc.text('Md. Saidur Rahman', 15, yPosition);
         doc.setFont('helvetica', 'normal');
-        doc.text(' | Proprietor | ', 50, yPosition);
+        doc.text(', Proprietor', 52, yPosition);
+        yPosition += 5;
+
         doc.setFont('helvetica', 'bold');
-        doc.text('M S RAHMAN TRADERS', 80, yPosition);
+        doc.text('M S RAHMAN TRADERS', 15, yPosition);
         yPosition += 8;
     };
 
