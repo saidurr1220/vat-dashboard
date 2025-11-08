@@ -697,9 +697,9 @@ export function generateMushok62PDF(data: Mushok62Data) {
         addTableRow(totalRow, true);
     }
 
-    // Add summary section - increased spacing to avoid overlap
-    yPosition += 15;
-    checkPageBreak(35);
+    // Add summary section - ensure proper spacing after table
+    yPosition += 25; // Increased spacing to prevent overlap
+    checkPageBreak(45); // Ensure enough space for summary
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
