@@ -695,10 +695,13 @@ export function generateMushok62PDF(data: Mushok62Data) {
             `Tk ${totalGross.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
         ];
         addTableRow(totalRow, true);
+
+        // Add extra spacing after total row to separate from summary
+        yPosition += 10;
     }
 
     // Add summary section - ensure proper spacing after table
-    yPosition += 25; // Increased spacing to prevent overlap
+    yPosition += 15; // Additional spacing for summary section
     checkPageBreak(45); // Ensure enough space for summary
 
     doc.setFontSize(9);
