@@ -821,10 +821,20 @@ export function generateMushok610PDF(data: Mushok610Data) {
         doc.text(`[See sub-rule (1) of rule 42] - ${monthName} ${data.period.year}`, pageWidth / 2, yPosition, { align: 'center' });
         yPosition += 8;
 
-        // Company info
+        // Company info with proprietor details
         doc.setFontSize(9);
-        doc.text(`Registered/Enlisted Person: ${data.settings?.taxpayerName || ''}`, 15, yPosition);
-        doc.text(`BIN: ${data.settings?.bin || ''}`, pageWidth - 60, yPosition);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Registered/Enlisted Person:', 15, yPosition);
+        doc.text(`BIN: ${data.settings?.bin || '004223577-0205'}`, pageWidth - 60, yPosition);
+        yPosition += 5;
+
+        // Proprietor information
+        doc.setFont('helvetica', 'bold');
+        doc.text('Md. Saidur Rahman', 15, yPosition);
+        doc.setFont('helvetica', 'normal');
+        doc.text(' | Proprietor | ', 50, yPosition);
+        doc.setFont('helvetica', 'bold');
+        doc.text('M S RAHMAN TRADERS', 80, yPosition);
         yPosition += 8;
     };
 
