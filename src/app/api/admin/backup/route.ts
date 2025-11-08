@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
         const compressedSize = Buffer.byteLength(backupJson, 'utf8');
 
         // Store backup in database
+        const backupName = `backup_${new Date().toISOString().replace(/[:.]/g, '-')}${type === 'full' ? '_full' : '_partial'}`;
+        const backupDescription = description || `${type} backup created on ${new Date().toLocaleDateString()}`;
+
         const backupRecord = await db.execute(sql`
       INSERT INTO system_backups (
         backup_name,
@@ -94,14 +97,14 @@ export async function POST(request: NextRequest) {
         created_by,
         created_at
       ) VALUES (
-        ${`backup_${new Date().toISOString().replace(/[:.]/g, '-')}${type === 'full' ? '_full' : '_partial'}`},
+        ${backupName},
         ${type},
-        ${description || `${type} backup created on ${new Date().toLocaleDateString()}`},
-        ${backupJson},
+        ${backupDescription},
+        ${sql.raw(`'${backupJson.replace(/'/g, "''")}'::jsonb`)},
         ${compressedSize},
         ${tablesToBackup.length},
         ${totalRecords},
-        ${'admin'},
+        'admin',
         NOW()
       ) RETURNING id, backup_name, created_at
     `);
@@ -170,7 +173,12 @@ export async function GET(request: NextRequest) {
             const backupData = backup.rows[0];
             const filename = `${backupData.backup_name}.json`;
 
-            return new NextResponse(backupData.backup_data as string, {
+            // Convert JSONB to string if needed
+            const jsonData = typeof backupData.backup_data === 'string'
+                ? backupData.backup_data
+                : JSON.stringify(backupData.backup_data, null, 2);
+
+            return new NextResponse(jsonData, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Disposition': `attachment; filename="${filename}"`,
