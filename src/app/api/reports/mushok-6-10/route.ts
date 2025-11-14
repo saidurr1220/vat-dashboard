@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         // Sales data above threshold
         // Display taxable value (excl VAT) and check threshold on same
         const salesResult = await db.execute(sql`
-            SELECT 
+            SELECT DISTINCT ON (s.id)
                 s.invoice_no,
                 s.dt as transaction_date,
                 CAST(s.total_value AS NUMERIC) / 1.15 as value,
@@ -40,11 +40,11 @@ export async function GET(request: NextRequest) {
                 COALESCE(c.bin, c.nid, c2.bin, c2.nid, '') as buyer_bin
             FROM sales s
             LEFT JOIN customers c ON s.customer_id = c.id
-            LEFT JOIN customers c2 ON LOWER(TRIM(s.customer)) = LOWER(TRIM(c2.name))
+            LEFT JOIN customers c2 ON LOWER(TRIM(s.customer)) = LOWER(TRIM(c2.name)) AND c.id IS NULL
             WHERE EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
                 AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
                 AND CAST(s.total_value AS NUMERIC) / 1.15 > ${threshold}
-            ORDER BY s.dt, s.invoice_no
+            ORDER BY s.id, s.dt, s.invoice_no
         `);
 
         return NextResponse.json({

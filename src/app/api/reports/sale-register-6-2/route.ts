@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
 
         // Sales Register - All sales invoices including bulk sales
         const salesResult = await db.execute(sql`
-            SELECT 
+            SELECT DISTINCT ON (s.id)
                 s.invoice_no,
                 s.dt as sale_date,
                 s.customer,
-                COALESCE(c.bin, c.nid, '') as customer_bin,
-                COALESCE(c.address, '') as customer_address,
+                COALESCE(c.bin, c.nid, c2.bin, c2.nid, '') as customer_bin,
+                COALESCE(c.address, c2.address, '') as customer_address,
                 CAST(s.total_value AS NUMERIC) as total_value,
                 -- VAT calculation: total_value always includes VAT
                 CAST(s.total_value AS NUMERIC) * 0.15 / 1.15 as vat_amount,
@@ -26,9 +26,10 @@ export async function GET(request: NextRequest) {
                 s.notes
             FROM sales s
             LEFT JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN customers c2 ON LOWER(TRIM(s.customer)) = LOWER(TRIM(c2.name)) AND c.id IS NULL
             WHERE EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
                 AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
-            ORDER BY s.dt, s.invoice_no
+            ORDER BY s.id, s.dt, s.invoice_no
         `);
 
         // Get sales lines for product details
