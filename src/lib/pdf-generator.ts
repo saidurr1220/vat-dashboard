@@ -1024,9 +1024,9 @@ export function generateMushok610PDF(data: Mushok610Data) {
         addTableRow(totalRow, true);
     }
 
-    // Summary
-    yPosition += 10;
-    checkPageBreak(30);
+    // Summary - check page break before adding spacing
+    checkPageBreak(40);
+    yPosition += 15;
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
