@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
                 s.dt as transaction_date,
                 CAST(s.total_value AS NUMERIC) / 1.15 as value,
                 s.customer as buyer_name,
-                COALESCE(c.address, '') as buyer_address,
-                COALESCE(c.bin, c.nid, '') as buyer_bin
+                COALESCE(c.address, c2.address, '') as buyer_address,
+                COALESCE(c.bin, c.nid, c2.bin, c2.nid, '') as buyer_bin
             FROM sales s
             LEFT JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN customers c2 ON LOWER(TRIM(s.customer)) = LOWER(TRIM(c2.name))
             WHERE EXTRACT(MONTH FROM s.dt) = ${parseInt(targetMonth)}
                 AND EXTRACT(YEAR FROM s.dt) = ${parseInt(targetYear)}
                 AND CAST(s.total_value AS NUMERIC) / 1.15 > ${threshold}
