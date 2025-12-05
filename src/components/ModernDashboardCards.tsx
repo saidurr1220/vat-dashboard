@@ -161,35 +161,39 @@ export default function ModernDashboardCards({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Sales Overview</h2>
+        <h2 className="text-base sm:text-lg font-semibold">Sales Overview</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         {cards.map((card, index) => {
           const Icon = card.icon;
 
           return (
             <Card key={index} className="relative overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate pr-2">
                   {card.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                  <Icon className={`h-4 w-4 ${card.color}`} />
+                <div
+                  className={`p-1.5 sm:p-2 rounded-lg ${card.bgColor} flex-shrink-0`}
+                >
+                  <Icon className={`h-3 w-3 sm:h-4 sm:w-4 ${card.color}`} />
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 pt-0">
                 <div className="space-y-2">
-                  <div className="text-2xl font-bold">{card.value}</div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
+                  <div className="text-lg sm:text-2xl font-bold truncate">
+                    {card.value}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground truncate flex-1">
                       {card.subtitle}
                     </p>
                     <Badge
                       variant={card.trendUp ? "default" : "secondary"}
-                      className="text-xs"
+                      className="text-xs flex-shrink-0"
                     >
                       {card.trend}
                     </Badge>

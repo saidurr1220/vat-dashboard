@@ -110,111 +110,115 @@ export default function BusinessInsightsDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 sm:p-6 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">
               Business Analytics Dashboard
             </h2>
-            <p className="text-blue-100">M S RAHMAN TRADERS - {monthName}</p>
+            <p className="text-xs sm:text-sm text-blue-100 truncate">
+              M S RAHMAN TRADERS - {monthName}
+            </p>
           </div>
-          <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
-            <BarChart3 className="w-8 h-8" />
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
         </div>
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Current Month Revenue */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-600" />
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             {revenueGrowth !== 0 && (
               <div
-                className={`flex items-center gap-1 text-sm font-semibold ${
+                className={`flex items-center gap-1 text-xs sm:text-sm font-semibold ${
                   revenueGrowth > 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {revenueGrowth > 0 ? (
-                  <ArrowUp className="w-4 h-4" />
+                  <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
-                  <ArrowDown className="w-4 h-4" />
+                  <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 )}
                 {Math.abs(revenueGrowth)}%
               </div>
             )}
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 truncate">
             ৳{(data.currentMonth.revenue / 1000000).toFixed(2)}M
           </div>
-          <div className="text-sm text-gray-600">Monthly Revenue</div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Monthly Revenue
+          </div>
+          <div className="text-xs text-gray-500 mt-2 truncate">
             Avg: ৳{data.currentMonth.avgPerTransaction.toLocaleString()}
             /transaction
           </div>
         </div>
 
         {/* Units Sold */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-blue-600" />
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             {unitsGrowth !== 0 && (
               <div
-                className={`flex items-center gap-1 text-sm font-semibold ${
+                className={`flex items-center gap-1 text-xs sm:text-sm font-semibold ${
                   unitsGrowth > 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {unitsGrowth > 0 ? (
-                  <ArrowUp className="w-4 h-4" />
+                  <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
-                  <ArrowDown className="w-4 h-4" />
+                  <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 )}
                 {Math.abs(unitsGrowth)}%
               </div>
             )}
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 truncate">
             {data.currentMonth.units.toLocaleString()}
           </div>
-          <div className="text-sm text-gray-600">Units Sold</div>
+          <div className="text-xs sm:text-sm text-gray-600">Units Sold</div>
           <div className="text-xs text-gray-500 mt-2">
             {data.currentMonth.products} different products
           </div>
         </div>
 
         {/* Transactions */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6 text-purple-600" />
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 truncate">
             {data.currentMonth.transactions}
           </div>
-          <div className="text-sm text-gray-600">Transactions</div>
+          <div className="text-xs sm:text-sm text-gray-600">Transactions</div>
           <div className="text-xs text-gray-500 mt-2">
             {data.currentMonth.customers} customers
           </div>
         </div>
 
         {/* VAT Collected */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-orange-600" />
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 truncate">
             ৳{(data.vat.totalVatCollected / 1000).toFixed(0)}K
           </div>
-          <div className="text-sm text-gray-600">VAT Collected</div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs sm:text-sm text-gray-600">VAT Collected</div>
+          <div className="text-xs text-gray-500 mt-2 truncate">
             15% of ৳{(data.vat.totalSalesValue / 1000).toFixed(0)}K
           </div>
         </div>
@@ -231,27 +235,30 @@ export default function BusinessInsightsDashboard() {
             </div>
             <p className="text-xs text-gray-600 mt-1">By revenue this month</p>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {data.topProducts.map((product, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-blue-600">
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm font-bold text-blue-600">
                         #{index + 1}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
+                      <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         {product.name}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 truncate">
                         {product.category} • {product.qtySold} units
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xs sm:text-sm font-semibold text-gray-900">
                       ৳{(product.revenue / 1000).toFixed(0)}K
                     </div>
                   </div>
@@ -270,18 +277,21 @@ export default function BusinessInsightsDashboard() {
             </div>
             <p className="text-xs text-gray-600 mt-1">By revenue this month</p>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {data.topCustomers.map((customer, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-purple-600">
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm font-bold text-purple-600">
                         #{index + 1}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
+                      <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         {customer.name}
                       </div>
                       <div className="text-xs text-gray-500">
@@ -289,8 +299,8 @@ export default function BusinessInsightsDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xs sm:text-sm font-semibold text-gray-900">
                       ৳{(customer.revenue / 1000).toFixed(0)}K
                     </div>
                   </div>
@@ -314,21 +324,23 @@ export default function BusinessInsightsDashboard() {
             Sales breakdown by category
           </p>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {data.categoryPerformance.map((cat, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200"
+                className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-3 sm:p-4 border border-gray-200"
               >
-                <div className="text-lg font-bold text-gray-900 mb-1">
+                <div className="text-sm sm:text-lg font-bold text-gray-900 mb-1 truncate">
                   {cat.category || "Uncategorized"}
                 </div>
-                <div className="text-2xl font-bold text-blue-600 mb-2">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-2 truncate">
                   ৳{(cat.revenue / 1000).toFixed(0)}K
                 </div>
                 <div className="text-xs text-gray-600 space-y-1">
-                  <div>{cat.unitsSold.toLocaleString()} units sold</div>
+                  <div className="truncate">
+                    {cat.unitsSold.toLocaleString()} units sold
+                  </div>
                   <div>{cat.products} products</div>
                 </div>
               </div>
@@ -348,9 +360,9 @@ export default function BusinessInsightsDashboard() {
             Revenue and units sold over time
           </p>
         </div>
-        <div className="p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <div className="p-4 sm:p-6">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 px-3 text-sm font-semibold text-gray-700">
@@ -394,37 +406,37 @@ export default function BusinessInsightsDashboard() {
       </div>
 
       {/* Overall Stats Footer */}
-      <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-6 border border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-4">
+      <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 sm:p-6 border border-gray-200">
+        <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-3 sm:mb-4">
           All-Time Statistics
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               ৳{(data.overall.totalRevenue / 1000000).toFixed(1)}M
             </div>
             <div className="text-xs text-gray-600 mt-1">Total Revenue</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {data.overall.totalUnitsSold.toLocaleString()}
             </div>
             <div className="text-xs text-gray-600 mt-1">Units Sold</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {data.overall.totalTransactions}
             </div>
             <div className="text-xs text-gray-600 mt-1">Transactions</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {data.overall.uniqueCustomers}
             </div>
             <div className="text-xs text-gray-600 mt-1">Customers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {data.overall.productsSold}
             </div>
             <div className="text-xs text-gray-600 mt-1">Products</div>

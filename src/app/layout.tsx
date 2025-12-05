@@ -19,11 +19,8 @@ export default function RootLayout({
         <ClientWrapper>
           <AuthProvider>
             <ModernNavigation />
-            <main
-              className="min-h-screen bg-background print:ml-0 print:w-full transition-all duration-300"
-              style={{ marginLeft: "var(--sidebar-width, 0px)" }}
-            >
-              <div className="p-4 lg:p-6 pt-16 lg:pt-6 print:p-0 print:pt-0">
+            <main className="min-h-screen bg-background print:ml-0 print:w-full transition-all duration-300 lg:ml-64">
+              <div className="p-4 sm:p-6 pt-16 lg:pt-6 print:p-0 print:pt-0 max-w-full overflow-x-hidden">
                 {children}
               </div>
             </main>

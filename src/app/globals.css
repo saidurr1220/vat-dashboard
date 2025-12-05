@@ -166,3 +166,21 @@
     background: #94a3b8;
   }
 }
+
+/* Mobile responsive table improvements */
+@layer utilities {
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+  
+  .table-responsive table {
+    @apply min-w-full;
+  }
+  
+  /* Ensure tables don't break layout on mobile */
+  @media (max-width: 640px) {
+    .overflow-x-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}

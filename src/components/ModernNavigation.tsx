@@ -135,14 +135,10 @@ export default function ModernNavigation() {
     }
   }, [pathname, mounted]);
 
-  // Set CSS variable for sidebar width
+  // Close mobile menu when route changes
   useEffect(() => {
-    if (user && !isLoading) {
-      document.documentElement.style.setProperty("--sidebar-width", "16rem");
-    } else {
-      document.documentElement.style.setProperty("--sidebar-width", "0px");
-    }
-  }, [user, isLoading]);
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   // Don't render navigation while checking auth or if user is not logged in
   if (isLoading || !user) {
